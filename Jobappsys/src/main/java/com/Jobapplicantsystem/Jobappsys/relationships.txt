@@ -1,0 +1,310 @@
+Job Applicant System - Entity Relationships
+Overview
+This document describes all 18 entities and their relationships in the Job Applicant System.
+
+Entity Relationship Summary
+1. USERS (Base Entity)
+
+Purpose: Central authentication and base information for all system users
+Relationships:
+
+ONE-TO-ONE with Applicants (user_id)
+ONE-TO-ONE with Employers (user_id)
+ONE-TO-MANY with Notifications (one user has many notifications)
+ONE-TO-MANY with User_Sessions (one user can have multiple active sessions)
+ONE-TO-MANY with Shared_Jobs (one user can share multiple jobs)
+ONE-TO-MANY with Job_Reports (one user can report multiple jobs)
+
+
+Java Concept: INHERITANCE - Users table is the parent, Applicants and Employers inherit from it
+
+
+2. APPLICANTS
+
+Purpose: Extended profile information for job seekers
+Relationships:
+
+ONE-TO-ONE with Users (inherits authentication)
+ONE-TO-MANY with Resumes (one applicant has multiple resumes)
+MANY-TO-MANY with Skills through Applicant_Skills
+ONE-TO-MANY with Job_Applications (one applicant applies to many jobs)
+ONE-TO-MANY with Saved_Jobs (one applicant saves many jobs)
+ONE-TO-MANY with Employer_Reviews (one applicant can review multiple employers)
+
+
+Java Concept: SPECIALIZATION - Specialized type of User
+
+
+3. EMPLOYERS
+
+Purpose: Company/employer profile information
+Relationships:
+
+ONE-TO-ONE with Users (inherits authentication)
+ONE-TO-MANY with Job_Posts (one employer posts many jobs)
+ONE-TO-MANY with Employer_Reviews (one employer receives many reviews)
+
+
+Java Concept: SPECIALIZATION - Specialized type of User
+
+
+4. RESUMES
+
+Purpose: Stores uploaded resume files for applicants
+Relationships:
+
+MANY-TO-ONE with Applicants (many resumes belong to one applicant)
+ONE-TO-MANY with Job_Applications (one resume can be used in multiple applications)
+
+
+Java Concept: COMPOSITION - Resumes are tightly bound to Applicants
+
+
+5. SKILLS (Master Lookup Table)
+
+Purpose: Master list of all available skills in the system
+Relationships:
+
+MANY-TO-MANY with Applicants through Applicant_Skills
+MANY-TO-MANY with Job_Posts through Job_Required_Skills
+
+
+Java Concept: REFERENCE DATA - Acts as an ENUM-like lookup table
+
+
+6. APPLICANT_SKILLS (Junction Table)
+
+Purpose: Links applicants to their skills with proficiency levels
+Relationships:
+
+MANY-TO-ONE with Applicants
+MANY-TO-ONE with Skills
+
+
+Java Concept: MANY-TO-MANY RESOLUTION - Breaks down many-to-many into two one-to-many relationships
+Pattern: ASSOCIATION CLASS - Has its own attributes (proficiency_level, years_of_experience)
+
+
+7. JOB_POSTS
+
+Purpose: Job listings created by employers
+Relationships:
+
+MANY-TO-ONE with Employers (many jobs belong to one employer)
+ONE-TO-MANY with Job_Questions (one job has many questions)
+MANY-TO-MANY with Skills through Job_Required_Skills
+ONE-TO-MANY with Job_Applications (one job receives many applications)
+ONE-TO-MANY with Saved_Jobs (one job can be saved by many applicants)
+ONE-TO-MANY with Shared_Jobs (one job can be shared multiple times)
+ONE-TO-MANY with Job_Reports (one job can be reported multiple times)
+
+
+Java Concept: AGGREGATION - Job posts aggregate multiple components but can exist independently
+
+
+8. JOB_QUESTIONS
+
+Purpose: Custom screening questions for each job posting
+Relationships:
+
+MANY-TO-ONE with Job_Posts (many questions belong to one job)
+ONE-TO-MANY with Application_Answers (one question has many answers from different applications)
+
+
+Java Concept: COMPOSITION - Questions are tightly bound to Job Posts (deleted when job is deleted)
+
+
+9. JOB_REQUIRED_SKILLS (Junction Table)
+
+Purpose: Links job posts to required skills with importance levels
+Relationships:
+
+MANY-TO-ONE with Job_Posts
+MANY-TO-ONE with Skills
+
+
+Java Concept: MANY-TO-MANY RESOLUTION
+Pattern: ASSOCIATION CLASS - Has its own attribute (importance_level)
+
+
+10. JOB_APPLICATIONS (Core Transaction Entity)
+
+Purpose: Represents the application submitted by an applicant for a job
+Relationships:
+
+MANY-TO-ONE with Job_Posts (many applications for one job)
+MANY-TO-ONE with Applicants (many applications by one applicant)
+MANY-TO-ONE with Resumes (one resume per application)
+ONE-TO-MANY with Application_Answers (one application has many answers)
+ONE-TO-MANY with Application_Status_History (tracks all status changes)
+
+
+Java Concept: AGGREGATION - Applications aggregate data but can exist independently
+State Pattern: Uses status field with defined states (DRAFT, SUBMITTED, UNDER_REVIEW, etc.)
+
+
+11. APPLICATION_ANSWERS
+
+Purpose: Stores applicant's answers to job-specific questions
+Relationships:
+
+MANY-TO-ONE with Job_Applications (many answers belong to one application)
+MANY-TO-ONE with Job_Questions (many answers reference one question)
+
+
+Java Concept: COMPOSITION - Answers cannot exist without an application
+
+
+12. SAVED_JOBS (Junction Table)
+
+Purpose: Allows applicants to bookmark jobs for later
+Relationships:
+
+MANY-TO-ONE with Applicants (one applicant saves many jobs)
+MANY-TO-ONE with Job_Posts (one job can be saved by many applicants)
+
+
+Java Concept: MANY-TO-MANY RESOLUTION
+Pattern: WISHLIST PATTERN - Common e-commerce pattern for saved items
+
+
+13. SHARED_JOBS
+
+Purpose: Tracks when jobs are shared by users
+Relationships:
+
+MANY-TO-ONE with Job_Posts (one job can be shared multiple times)
+MANY-TO-ONE with Users (one user can share multiple jobs)
+
+
+Java Concept: EVENT TRACKING - Logs user actions for analytics
+
+
+14. JOB_REPORTS
+
+Purpose: Allows users to report inappropriate job postings
+Relationships:
+
+MANY-TO-ONE with Job_Posts (one job can be reported multiple times)
+MANY-TO-ONE with Users (one user can report multiple jobs)
+
+
+Java Concept: MODERATION PATTERN - Common pattern for content reporting
+State Pattern: Uses status field (PENDING, UNDER_REVIEW, RESOLVED, DISMISSED)
+
+
+15. APPLICATION_STATUS_HISTORY (Audit Trail)
+
+Purpose: Maintains complete history of all application status changes
+Relationships:
+
+MANY-TO-ONE with Job_Applications (one application has many status changes)
+MANY-TO-ONE with Users (tracks who changed the status)
+
+
+Java Concept: AUDIT TRAIL / TEMPORAL DATA - Maintains historical records
+Pattern: HISTORY PATTERN - Never updated, only inserted (append-only)
+
+
+16. NOTIFICATIONS
+
+Purpose: System notifications for users about relevant events
+Relationships:
+
+MANY-TO-ONE with Users (one user has many notifications)
+Soft reference to other entities via reference_id and reference_type
+
+
+Java Concept: OBSERVER PATTERN - Notifies users of system events
+Polymorphic Reference: reference_id can point to different entity types
+
+
+17. EMPLOYER_REVIEWS
+
+Purpose: Allows applicants to rate and review employer experiences
+Relationships:
+
+MANY-TO-ONE with Employers (one employer has many reviews)
+MANY-TO-ONE with Applicants (one applicant can review multiple employers)
+
+
+Java Concept: RATING SYSTEM - Common pattern for reputation management
+
+
+18. USER_SESSIONS (Security)
+
+Purpose: Manages user authentication sessions and security
+Relationships:
+
+MANY-TO-ONE with Users (one user can have multiple active sessions)
+
+
+Java Concept: SESSION MANAGEMENT - Security pattern for authentication
+Pattern: TOKEN-BASED AUTHENTICATION
+
+
+Relationship Type Summary
+One-to-One (1:1)
+
+Users ↔ Applicants
+Users ↔ Employers
+
+One-to-Many (1:N)
+
+Applicants → Resumes
+Applicants → Job_Applications
+Applicants → Saved_Jobs
+Employers → Job_Posts
+Job_Posts → Job_Questions
+Job_Posts → Job_Applications
+Job_Posts → Saved_Jobs
+Job_Posts → Shared_Jobs
+Job_Posts → Job_Reports
+Job_Applications → Application_Answers
+Job_Applications → Application_Status_History
+Job_Questions → Application_Answers
+Users → Notifications
+Users → User_Sessions
+Users → Shared_Jobs
+Users → Job_Reports
+
+Many-to-Many (M:N) - Resolved through Junction Tables
+
+Applicants ↔ Skills (via Applicant_Skills)
+Job_Posts ↔ Skills (via Job_Required_Skills)
+Applicants ↔ Job_Posts (via Job_Applications)
+Applicants ↔ Job_Posts (via Saved_Jobs)
+Applicants ↔ Employers (via Employer_Reviews)
+
+
+Key Java/OOP Concepts Demonstrated
+
+Inheritance: Users → Applicants/Employers
+Composition: Job_Posts → Job_Questions (strong ownership)
+Aggregation: Job_Applications (weak ownership)
+Polymorphism: User types (APPLICANT vs EMPLOYER)
+Encapsulation: Data hiding through proper relationships
+Association: Various linking tables
+State Pattern: Application and Job statuses
+Observer Pattern: Notifications system
+Strategy Pattern: Different job types and work modes
+Audit Trail: Status history tracking
+
+
+Cardinality Constraints
+
+UNIQUE constraints ensure data integrity (e.g., one user can only apply once to a job)
+CASCADE DELETE maintains referential integrity
+CHECK constraints enforce valid enum values
+NOT NULL constraints ensure required data
+Foreign Keys maintain relationships
+
+
+Design Patterns Applied
+
+Soft Delete Pattern: Using is_active flags instead of hard deletes
+Audit Trail Pattern: Status history tables
+Temporal Data Pattern: Tracking changes over time
+Polymorphic Association: Notifications can reference different entity types
+Event Sourcing: Tracking user actions (shares, saves, reports)
+Lookup Table Pattern: Skills as a central reference
