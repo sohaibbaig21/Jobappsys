@@ -1,10 +1,8 @@
 package com.Jobapplicantsystem.Jobappsys.service.applicant;
 
-import com.Jobapplicantsystem.model.Applicant;
-import com.Jobapplicantsystem.model.User;
-import com.Jobapplicantsystem.repository.ApplicantRepository;
-import com.Jobapplicantsystem.repository.UserRepository;
-import com.Jobapplicantsystem.util.SupabaseStorageClient;
+import com.Jobapplicantsystem.Jobappsys.model.Applicant;
+import com.Jobapplicantsystem.Jobappsys.repository.ApplicantRepository;
+import com.Jobapplicantsystem.Jobappsys.util.SupabaseStorageClient;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,49 +15,32 @@ import java.io.IOException;
 public class ApplicantProfileService {
 
     private final ApplicantRepository applicantRepository;
-    private final UserRepository userRepository;
     private final SupabaseStorageClient supabaseStorageClient;
 
     // Fetch profile using logged-in user's email
     public Applicant getProfile(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return applicantRepository.findById(user.getId())
+        return applicantRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Applicant profile not found"));
     }
 
     // Update basic applicant details
     public Applicant updateProfile(String email, Applicant updatedData) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Applicant applicant = applicantRepository.findById(user.getId())
+        Applicant applicant = applicantRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
-        applicant.setAddress(updatedData.getAddress());
-        applicant.setPhone(updatedData.getPhone());
-        applicant.setExperience(updatedData.getExperience());
-        applicant.setEducation(updatedData.getEducation());
-        applicant.setSkills(updatedData.getSkills());
+        // Update only existing fields in Applicant entity
+        applicant.setFullName(updatedData.getFullName());
+        // We normally shouldn't change email from here; keep as is or update if provided
+        if (updatedData.getEmail() != null && !updatedData.getEmail().isBlank()) {
+            applicant.setEmail(updatedData.getEmail());
+        }
 
         return applicantRepository.save(applicant);
     }
 
     // Upload resume to Supabase
     public String uploadResume(String email, MultipartFile file) throws IOException {
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String url = supabaseStorageClient.uploadFile(file, user.getId().toString());
-
-        Applicant applicant = applicantRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
-
-        applicant.setResumeUrl(url);
-        applicantRepository.save(applicant);
-
-        return url;
+        // Upload resume to Supabase using email as identifier
+        return supabaseStorageClient.uploadFile(file, email);
     }
 }

@@ -1,7 +1,7 @@
 package com.Jobapplicantsystem.Jobappsys.controller.applicant;
 
-import com.Jobapplicantsystem.model.SavedJob;
-import com.Jobapplicantsystem.service.applicant.ApplicantService;
+import com.Jobapplicantsystem.Jobappsys.model.SavedJob;
+import com.Jobapplicantsystem.Jobappsys.service.applicant.ApplicantService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

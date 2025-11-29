@@ -1,9 +1,9 @@
 package com.Jobapplicantsystem.Jobappsys.controller;
 
-import com.Jobapplicantsystem.dto.request.LoginRequest;
-import com.Jobapplicantsystem.dto.request.RegisterRequest;
-import com.Jobapplicantsystem.dto.response.AuthResponse;
-import com.Jobapplicantsystem.service.auth.AuthService;
+import com.Jobapplicantsystem.Jobappsys.dto.request.LoginRequest;
+import com.Jobapplicantsystem.Jobappsys.dto.request.RegisterRequest;
+import com.Jobapplicantsystem.Jobappsys.dto.response.AuthResponse;
+import com.Jobapplicantsystem.Jobappsys.service.auth.AuthService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

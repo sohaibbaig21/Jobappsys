@@ -1,11 +1,11 @@
 package com.Jobapplicantsystem.Jobappsys.service.applicant;
 
-import com.Jobapplicantsystem.model.JobPost;
-import com.Jobapplicantsystem.model.SavedJob;
-import com.Jobapplicantsystem.model.User;
-import com.Jobapplicantsystem.repository.JobPostRepository;
-import com.Jobapplicantsystem.repository.SavedJobRepository;
-import com.Jobapplicantsystem.repository.UserRepository;
+import com.Jobapplicantsystem.Jobappsys.model.Applicant;
+import com.Jobapplicantsystem.Jobappsys.model.JobPost;
+import com.Jobapplicantsystem.Jobappsys.model.SavedJob;
+import com.Jobapplicantsystem.Jobappsys.repository.ApplicantRepository;
+import com.Jobapplicantsystem.Jobappsys.repository.JobPostRepository;
+import com.Jobapplicantsystem.Jobappsys.repository.SavedJobRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,21 +16,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApplicantService {
 
-    private final UserRepository userRepository;
+    private final ApplicantRepository applicantRepository;
     private final JobPostRepository jobPostRepository;
     private final SavedJobRepository savedJobRepository;
 
     // Save job bookmark
     public SavedJob saveJob(String email, Long jobId) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Applicant applicant = applicantRepository.findAll().stream()
+                .filter(a -> email.equalsIgnoreCase(a.getEmail()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         JobPost job = jobPostRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
         SavedJob savedJob = SavedJob.builder()
-                .user(user)
+                .applicant(applicant)
                 .jobPost(job)
                 .build();
 
@@ -40,11 +42,13 @@ public class ApplicantService {
     // Get saved jobs
     public List<SavedJob> getSavedJobs(String email) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Applicant applicant = applicantRepository.findAll().stream()
+                .filter(a -> email.equalsIgnoreCase(a.getEmail()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         return savedJobRepository.findAll().stream()
-                .filter(job -> job.getUser().getId().equals(user.getId()))
+                .filter(saved -> saved.getApplicant() != null && saved.getApplicant().getId().equals(applicant.getId()))
                 .toList();
     }
 

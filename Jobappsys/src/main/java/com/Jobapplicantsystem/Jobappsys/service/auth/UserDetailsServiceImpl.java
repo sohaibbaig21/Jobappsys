@@ -29,13 +29,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // Map role to GrantedAuthority (assumes role like "APPLICANT" or "EMPLOYER")
-        String role = user.getRole() != null ? user.getRole().toString() : "USER";
+        // Map role to GrantedAuthority (assumes userType like "APPLICANT" or "EMPLOYER")
+        String role = user.getUserType() != null ? user.getUserType().name() : "USER";
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword())
+                .password(user.getPasswordHash())
                 .authorities(Collections.singletonList(authority))
                 .accountExpired(false)
                 .accountLocked(false)

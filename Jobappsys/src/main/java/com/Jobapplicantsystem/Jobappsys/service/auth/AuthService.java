@@ -1,10 +1,10 @@
 package com.Jobapplicantsystem.Jobappsys.service.auth;
 
-import com.Jobapplicantsystem.dto.request.LoginRequest;
-import com.Jobapplicantsystem.dto.request.RegisterRequest;
-import com.Jobapplicantsystem.dto.response.AuthResponse;
-import com.Jobapplicantsystem.model.User;
-import com.Jobapplicantsystem.repository.UserRepository;
+import com.Jobapplicantsystem.Jobappsys.dto.request.LoginRequest;
+import com.Jobapplicantsystem.Jobappsys.dto.request.RegisterRequest;
+import com.Jobapplicantsystem.Jobappsys.dto.response.AuthResponse;
+import com.Jobapplicantsystem.Jobappsys.model.User;
+import com.Jobapplicantsystem.Jobappsys.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,10 +29,9 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole()) // APPLICANT or EMPLOYER
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .userType(parseUserType(request.getRole())) // APPLICANT or EMPLOYER
                 .build();
 
         userRepository.save(user);
@@ -40,12 +39,16 @@ public class AuthService {
         String token = jwtService.generateToken(
                 org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
-                        .password(user.getPassword())
-                        .authorities(user.getRole().toString())
+                        .password(user.getPasswordHash())
+                        .authorities(user.getUserType().toString())
                         .build()
         );
 
-        return new AuthResponse(token, user.getEmail(), user.getRole().toString());
+        AuthResponse resp = new AuthResponse();
+        resp.setToken(token);
+        resp.setEmail(user.getEmail());
+        resp.setRole(user.getUserType().toString());
+        return resp;
     }
 
     // LOGIN
@@ -64,11 +67,26 @@ public class AuthService {
         String token = jwtService.generateToken(
                 org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
-                        .password(user.getPassword())
-                        .authorities(user.getRole().toString())
+                        .password(user.getPasswordHash())
+                        .authorities(user.getUserType().toString())
                         .build()
         );
 
-        return new AuthResponse(token, user.getEmail(), user.getRole().toString());
+        AuthResponse resp = new AuthResponse();
+        resp.setToken(token);
+        resp.setEmail(user.getEmail());
+        resp.setRole(user.getUserType().toString());
+        return resp;
+    }
+
+    private User.UserType parseUserType(String role) {
+        if (role == null) {
+            return User.UserType.APPLICANT; // default role
+        }
+        try {
+            return User.UserType.valueOf(role.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return User.UserType.APPLICANT;
+        }
     }
 }

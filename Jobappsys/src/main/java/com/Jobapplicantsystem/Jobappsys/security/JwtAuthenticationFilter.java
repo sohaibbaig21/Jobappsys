@@ -12,8 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.jobapplicantsystem.service.auth.JwtService;
-import com.jobapplicantsystem.service.auth.UserDetailsServiceImpl;
+import com.Jobapplicantsystem.Jobappsys.service.auth.JwtService;
+import com.Jobapplicantsystem.Jobappsys.service.auth.UserDetailsServiceImpl;
 
 import java.io.IOException;
 

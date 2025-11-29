@@ -1,8 +1,8 @@
 package com.Jobapplicantsystem.Jobappsys.controller.applicant;
 
-import com.Jobapplicantsystem.dto.request.ApplicationRequest;
-import com.Jobapplicantsystem.model.JobApplication;
-import com.Jobapplicantsystem.service.applicant.ApplicationService;
+import com.Jobapplicantsystem.Jobappsys.dto.request.ApplicationRequest;
+import com.Jobapplicantsystem.Jobappsys.model.JobApplication;
+import com.Jobapplicantsystem.Jobappsys.service.applicant.ApplicationService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,8 @@
 package com.Jobapplicantsystem.Jobappsys.controller.employer;
 
-import com.Jobapplicantsystem.model.JobPost;
-import com.Jobapplicantsystem.service.employer.JobPostService;
+import com.Jobapplicantsystem.Jobappsys.dto.request.JobPostRequest;
+import com.Jobapplicantsystem.Jobappsys.dto.response.JobPostResponse;
+import com.Jobapplicantsystem.Jobappsys.service.employer.JobPostService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,12 +23,12 @@ public class JobPostController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<JobPost> createJob(@RequestBody JobPost job) {
-        return ResponseEntity.ok(jobPostService.createJob(getEmail(), job));
+    public ResponseEntity<JobPostResponse> createJob(@RequestBody JobPostRequest request) {
+        return ResponseEntity.ok(jobPostService.createJobPost(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<JobPost>> getMyJobs() {
-        return ResponseEntity.ok(jobPostService.getEmployerJobs(getEmail()));
+    public ResponseEntity<List<JobPostResponse>> getMyJobs() {
+        return ResponseEntity.ok(jobPostService.getAllJobPosts());
     }
 }

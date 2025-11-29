@@ -1,6 +1,6 @@
 package com.Jobapplicantsystem.Jobappsys.repository;
 
-import com.Jobapplicantsystem.model.SavedJob;
+import com.Jobapplicantsystem.Jobappsys.model.SavedJob;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

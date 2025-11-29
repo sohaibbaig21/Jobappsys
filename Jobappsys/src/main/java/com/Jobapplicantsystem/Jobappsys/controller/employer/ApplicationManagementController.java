@@ -1,7 +1,7 @@
 package com.Jobapplicantsystem.Jobappsys.controller.employer;
 
-import com.Jobapplicantsystem.model.JobApplication;
-import com.Jobapplicantsystem.service.employer.ApplicationReviewService;
+import com.Jobapplicantsystem.Jobappsys.dto.response.ApplicationResponse;
+import com.Jobapplicantsystem.Jobappsys.service.employer.ApplicationReviewService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,16 +21,20 @@ public class ApplicationManagementController {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    @GetMapping("/{jobId}")
-    public ResponseEntity<List<JobApplication>> getApplications(@PathVariable Long jobId) {
-        return ResponseEntity.ok(reviewService.getJobApplications(getEmail(), jobId));
+    @GetMapping("/{jobPostId}")
+    public ResponseEntity<List<ApplicationResponse>> getApplicationsByJobPost(@PathVariable Long jobPostId) {
+        return ResponseEntity.ok(reviewService.getApplicationsByJobPost(jobPostId));
     }
 
-    @PutMapping("/{applicationId}/status")
-    public ResponseEntity<JobApplication> updateStatus(
-            @PathVariable Long applicationId,
-            @RequestParam String status
-    ) {
-        return ResponseEntity.ok(reviewService.updateStatus(getEmail(), applicationId, status));
+    @PutMapping("/{applicationId}/accept")
+    public ResponseEntity<Void> acceptApplication(@PathVariable Long applicationId) {
+        reviewService.acceptApplication(applicationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{applicationId}/reject")
+    public ResponseEntity<Void> rejectApplication(@PathVariable Long applicationId) {
+        reviewService.rejectApplication(applicationId);
+        return ResponseEntity.ok().build();
     }
 }

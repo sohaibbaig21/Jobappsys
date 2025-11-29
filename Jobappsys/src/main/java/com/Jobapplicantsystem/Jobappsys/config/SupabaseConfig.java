@@ -8,6 +8,7 @@ package com.Jobapplicantsystem.Jobappsys.config;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import com.Jobapplicantsystem.Jobappsys.util.SupabaseStorageClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
