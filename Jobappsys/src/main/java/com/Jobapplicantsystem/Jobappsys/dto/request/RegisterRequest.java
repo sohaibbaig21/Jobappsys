@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterRequest {
-    private String fullName;
+    private String firstName;  // <--- You were missing this
+    private String lastName;   // <--- You were missing this
     private String email;
     private String password;
-    private String role; // e.g., "APPLICANT" or "EMPLOYER"
+    private String role;       // e.g., "EMPLOYER" or "APPLICANT"
 }

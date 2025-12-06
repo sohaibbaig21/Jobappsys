@@ -29,13 +29,16 @@ public class AuthService {
         }
 
         User user = User.builder()
+                .firstName(request.getFirstName()) // <--- ADD THIS
+                .lastName(request.getLastName())   // <--- ADD THIS
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .userType(parseUserType(request.getRole())) // APPLICANT or EMPLOYER
+                .userType(parseUserType(request.getRole()))
                 .build();
 
         userRepository.save(user);
 
+        // ... rest of the code is fine ...
         String token = jwtService.generateToken(
                 org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
