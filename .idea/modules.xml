@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Jobappsys.iml" filepath="$PROJECT_DIR$/.idea/Jobappsys.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Jobappsys/Jobappsys.iml" filepath="$PROJECT_DIR$/Jobappsys/Jobappsys.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Jobappsys-main.iml" filepath="$PROJECT_DIR$/.idea/Jobappsys-main.iml" />
     </modules>
   </component>
 </project>
