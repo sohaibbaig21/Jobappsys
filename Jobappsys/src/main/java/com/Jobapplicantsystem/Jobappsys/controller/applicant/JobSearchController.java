@@ -1,23 +1,29 @@
 package com.Jobapplicantsystem.Jobappsys.controller.applicant;
 
-import com.Jobapplicantsystem.Jobappsys.model.JobPost;
-import com.Jobapplicantsystem.Jobappsys.service.applicant.ApplicantService;
-
-import lombok.RequiredArgsConstructor;
+import com.Jobapplicantsystem.Jobappsys.dto.response.JobPostResponse;
+import com.Jobapplicantsystem.Jobappsys.service.employer.JobPostService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/jobs/search")
-@RequiredArgsConstructor
+@RequestMapping("/api/jobs") // <--- This matches the URL you are trying to reach
 public class JobSearchController {
 
-    private final ApplicantService applicantService;
+    @Autowired
+    private JobPostService jobPostService;
 
+    // GET http://localhost:8081/api/jobs
     @GetMapping
-    public ResponseEntity<List<JobPost>> getAllJobs() {
-        return ResponseEntity.ok(applicantService.getAllJobs());
+    public ResponseEntity<List<JobPostResponse>> getAllJobs() {
+        return ResponseEntity.ok(jobPostService.getAllJobPosts());
+    }
+
+    // GET http://localhost:8081/api/jobs/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<JobPostResponse> getJobById(@PathVariable Long id) {
+        return ResponseEntity.ok(jobPostService.getJobPostById(id));
     }
 }

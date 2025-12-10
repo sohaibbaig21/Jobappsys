@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Setup Profile | JobAppSys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+    <style>
+        .section-title { margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .dynamic-list { margin-bottom: 15px; }
+        .dynamic-item { background: #f9f9f9; padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<main class="stack" style="max-width: 800px; margin: 30px auto;">
+    <h1>Complete Your Profile</h1>
+    <div id="status" class="muted"></div>
+
+    <form id="profile-form" class="stack card">
+
+        <h3 class="section-title">1. Personal Information</h3>
+        <div class="row">
+            <input name="phone" placeholder="Phone Number" required>
+            <input name="city" placeholder="City / Location" required>
+        </div>
+        <div class="row">
+            <input name="postalCode" placeholder="Zip/Postal Code">
+            <label><input type="checkbox" name="relocate"> Willing to relocate?</label>
+        </div>
+
+        <h3 class="section-title">2. Job Preferences</h3>
+        <input name="jobTitle" placeholder="Target Job Title (e.g. Java Developer)">
+        <select name="jobType">
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+            <option value="Internship">Internship</option>
+        </select>
+        <input name="workAuth" placeholder="Work Authorization (e.g. Citizen, Visa)">
+
+        <h3 class="section-title">3. Work Experience</h3>
+        <div id="exp-list" class="dynamic-list"></div>
+        <button type="button" class="btn secondary" onclick="addExperience()">+ Add Job</button>
+
+        <h3 class="section-title">4. Education</h3>
+        <div id="edu-list" class="dynamic-list"></div>
+        <button type="button" class="btn secondary" onclick="addEducation()">+ Add School</button>
+
+        <h3 class="section-title">5. Skills</h3>
+        <input name="skills" placeholder="Comma separated (e.g. Java, React, SQL)">
+
+        <h3 class="section-title">8. Professional Summary</h3>
+        <textarea name="summary" rows="4" placeholder="Brief summary about yourself..."></textarea>
+
+        <button type="submit" style="margin-top: 20px;">Save Profile</button>
+    </form>
+</main>
+
+<script>
+    // --- Dynamic Form Logic ---
+    function addExperience() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item stack';
+        div.innerHTML = `
+            <input class="exp-title" placeholder="Job Title">
+            <input class="exp-company" placeholder="Company Name">
+            <div class="row">
+                <input type="date" class="exp-start"> to <input type="date" class="exp-end">
+            </div>
+            <textarea class="exp-desc" placeholder="Responsibilities..."></textarea>
+            <button type="button" onclick="this.parentElement.remove()" style="background:#dc3545; width: fit-content;">Remove</button>
+        `;
+        document.getElementById('exp-list').appendChild(div);
+    }
+
+    function addEducation() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item stack';
+        div.innerHTML = `
+            <input class="edu-school" placeholder="School / University">
+            <input class="edu-degree" placeholder="Degree (e.g. BS CS)">
+            <div class="row">
+                <input type="date" class="edu-start"> to <input type="date" class="edu-end">
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" style="background:#dc3545; width: fit-content;">Remove</button>
+        `;
+        document.getElementById('edu-list').appendChild(div);
+    }
+
+    // --- Main Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        $api.renderHeader('profile');
+        const form = document.getElementById('profile-form');
+        const status = document.getElementById('status');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            status.textContent = "Saving...";
+
+            // Gather Arrays manually
+            const experience = Array.from(document.querySelectorAll('#exp-list .dynamic-item')).map(item => ({
+                title: item.querySelector('.exp-title').value,
+                company: item.querySelector('.exp-company').value,
+                start: item.querySelector('.exp-start').value,
+                end: item.querySelector('.exp-end').value,
+                description: item.querySelector('.exp-desc').value
+            }));
+
+            const education = Array.from(document.querySelectorAll('#edu-list .dynamic-item')).map(item => ({
+                school: item.querySelector('.edu-school').value,
+                degree: item.querySelector('.edu-degree').value,
+                start: item.querySelector('.edu-start').value,
+                end: item.querySelector('.edu-end').value
+            }));
+
+            const payload = {
+                phone: form.phone.value,
+                city: form.city.value,
+                postalCode: form.postalCode.value,
+                relocate: form.relocate.checked,
+                jobTitle: form.jobTitle.value,
+                jobType: form.jobType.value,
+                workAuth: form.workAuth.value,
+                summary: form.summary.value,
+                // Serialize arrays to JSON strings
+                experienceJson: JSON.stringify(experience),
+                educationJson: JSON.stringify(education),
+                skillsJson: form.skills.value // simple string
+            };
+
+            try {
+                await $api.apiFetch('/api/applicant/profile', { method: 'POST', body: payload });
+                status.className = 'success';
+                status.textContent = "Profile saved successfully!";
+                setTimeout(() => location.href = '/jobs.html', 1000);
+            } catch (err) {
+                status.className = 'error';
+                status.textContent = "Error saving: " + err.message;
+            }
+        });
+    });
+</script>
+</body>
+</html>

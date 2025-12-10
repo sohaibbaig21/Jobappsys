@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Job Board | Jobappsys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          // 1. Render Header
+          $api.renderHeader('jobs');
+
+          const listEl = document.getElementById('jobs-list');
+          const status = document.getElementById('status');
+
+          status.textContent = 'Loading jobs...';
+
+          try {
+            // 2. Fetch All Jobs
+            const jobs = await $api.apiFetch('/api/jobs', { auth: false });
+            status.textContent = '';
+
+            if (!Array.isArray(jobs) || jobs.length === 0) {
+              status.textContent = 'No jobs found. Be the first to post one!';
+              return;
+            }
+
+            // 3. Render Each Job Card
+            jobs.forEach(j => {
+              const item = document.createElement('div');
+              item.className = 'card stack';
+
+              const title = j.title || 'Untitled';
+              const location = j.location || 'Remote';
+              const salary = j.salary ? `$${j.salary}` : 'Salary not disclosed';
+
+              item.innerHTML = `
+                <div class="row" style="justify-content: space-between;">
+                  <h3>${title}</h3>
+                  <a class="btn" href="/job.html?id=${j.id}">View Details</a>
+                </div>
+                <div class="row muted">
+                   <span>📍 ${location}</span>
+                   <span>💼 ${j.employmentType || 'Full-time'}</span>
+                </div>
+                <div class="muted">💰 ${salary}</div>
+              `;
+              listEl.appendChild(item);
+            });
+
+          } catch (e) {
+            status.className = 'error';
+            status.textContent = 'Failed to load jobs: ' + (e.message || 'Unknown error');
+          }
+        });
+    </script>
+</head>
+<body>
+<main class="stack" style="max-width: 900px; margin: 0 auto;">
+    <h1>Job Board</h1>
+
+    <div class="card row" style="background:#f1f1f1; padding:15px; flex-wrap:wrap;">
+        <input id="filter-loc" placeholder="Location (e.g. USA)" style="flex:1;">
+        <select id="filter-type">
+            <option value="All">All Types</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Remote">Remote</option>
+            <option value="Contract">Contract</option>
+        </select>
+        <select id="filter-sort">
+            <option value="relevant">Most Relevant</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+        </select>
+        <button onclick="loadJobs()">Filter</button>
+    </div>
+
+    <div id="status" class="muted"></div>
+    <div id="jobs-list" class="list"></div>
+</main>
+
+<script>
+    // Updated loadJobs function handles parameters
+    async function loadJobs() {
+        const listEl = document.getElementById('jobs-list');
+        const status = document.getElementById('status');
+
+        // Get values
+        const loc = document.getElementById('filter-loc').value;
+        const type = document.getElementById('filter-type').value;
+        const sort = document.getElementById('filter-sort').value;
+
+        // Build URL
+        const params = new URLSearchParams({ location: loc, type: type, sort: sort });
+
+        status.textContent = 'Loading...';
+        listEl.innerHTML = ''; // Clear current list
+
+        try {
+            const jobs = await $api.apiFetch(`/api/jobs?${params.toString()}`, { auth: false });
+            status.textContent = '';
+
+            if (!jobs || jobs.length === 0) {
+                status.textContent = 'No jobs found matching your filters.';
+                return;
+            }
+
+            jobs.forEach(j => {
+                const item = document.createElement('div');
+                item.className = 'card stack';
+                item.innerHTML = `
+                    <div class="row" style="justify-content: space-between;">
+                      <h3>${j.title || 'Untitled'}</h3>
+                      <a class="btn" href="/job.html?id=${j.id}">View Details</a>
+                    </div>
+                    <div class="row muted">
+                       <span>📍 ${j.location || 'Remote'}</span>
+                       <span>💼 ${j.employmentType || 'Full-time'}</span>
+                    </div>
+                    <div class="muted">💰 ${j.salary ? '$'+j.salary : 'N/A'}</div>
+                `;
+                listEl.appendChild(item);
+            });
+
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        $api.renderHeader('jobs');
+        loadJobs(); // Load default on start
+    });
+</script>
+</body>
+</html>

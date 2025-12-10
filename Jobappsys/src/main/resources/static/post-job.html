@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Post a Job | Jobappsys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          // 1. Render Header
+          $api.renderHeader('post-job');
+
+          const form = document.getElementById('post-job-form');
+          const status = document.getElementById('status');
+
+          // 2. Security Check (Must be Employer)
+          const auth = $api.getAuth();
+          if (!auth || auth.role !== 'EMPLOYER') {
+              alert('Access Denied: You must be an Employer to post jobs.');
+              window.location.href = '/index.html';
+              return;
+          }
+
+          // 3. Handle Form Submit
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            status.className = 'muted';
+            status.textContent = 'Publishing job...';
+
+            // Collect Data
+            const payload = {
+                title: form.title.value.trim(),
+                location: form.location.value.trim(),
+                employmentType: form.employmentType.value,
+                salary: parseFloat(form.salary.value),
+                description: form.description.value.trim()
+            };
+
+            try {
+              // Send to Backend
+              await $api.apiFetch('/api/employer/jobs', {
+                method: 'POST',
+                body: payload
+              });
+
+              // Success
+              status.className = 'success';
+              status.textContent = 'Job posted successfully! Redirecting...';
+              setTimeout(() => location.href = '/jobs.html', 1000);
+
+            } catch (e) {
+              status.className = 'error';
+              status.textContent = 'Error: ' + (e.message || 'Failed to post job');
+            }
+          });
+        });
+    </script>
+</head>
+<body>
+<main class="stack" style="max-width: 600px; margin: 32px auto;">
+    <h1>Post a New Job</h1>
+    <div id="status" class="muted"></div>
+
+    <form id="post-job-form" class="stack card">
+
+        <div class="stack">
+            <label>Job Title</label>
+            <input name="title" type="text" placeholder="e.g. Senior Java Developer" required>
+        </div>
+
+        <div class="row">
+            <div class="stack" style="flex: 1;">
+                <label>Location</label>
+                <input name="location" type="text" placeholder="e.g. Remote / New York" required>
+            </div>
+            <div class="stack" style="flex: 1;">
+                <label>Employment Type</label>
+                <select name="employmentType">
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stack">
+            <label>Salary (Annual USD)</label>
+            <input name="salary" type="number" placeholder="e.g. 120000" required>
+        </div>
+
+        <div class="stack">
+            <label>Job Description</label>
+            <textarea name="description" rows="6" placeholder="Describe the role, requirements, and benefits..." required></textarea>
+        </div>
+
+        <div class="row" style="justify-content: flex-end; margin-top: 10px;">
+            <a href="/jobs.html" class="btn secondary" style="margin-right: 10px;">Cancel</a>
+            <button type="submit">Publish Job</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

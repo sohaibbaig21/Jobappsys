@@ -44,7 +44,7 @@ public class SecurityConfig {
 
     /**
      * PASSWORD ENCODER BEAN
-     *
+     * <p>
      * JAVA CONCEPT: Bean Definition
      * - @Bean methods create Spring-managed objects
      * - BCryptPasswordEncoder uses BCrypt hashing algorithm
@@ -61,7 +61,7 @@ public class SecurityConfig {
 
     /**
      * AUTHENTICATION MANAGER BEAN
-     *
+     * <p>
      * PURPOSE: Manages authentication process
      * - Used in login to verify credentials
      */
@@ -74,9 +74,9 @@ public class SecurityConfig {
 
     /**
      * SECURITY FILTER CHAIN
-     *
+     * <p>
      * PURPOSE: Define security rules for all endpoints
-     *
+     * <p>
      * IMPORTANT CONFIGURATION:
      * 1. Disable CSRF (not needed for stateless JWT authentication)
      * 2. Configure endpoint authorization rules
@@ -87,41 +87,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        // STEP 1: Disable CSRF (Cross-Site Request Forgery)
-        // - Not needed for JWT because tokens are in headers, not cookies
         http.csrf(csrf -> csrf.disable());
 
-        // STEP 2: Configure Authorization Rules
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()  // Public: login, register
-                .requestMatchers("/api/jobs/search/**").permitAll()  // Public: job search
-                .requestMatchers("/api/applicant/**").hasAuthority("APPLICANT")  // Applicant only
-                .requestMatchers("/api/employer/**").hasAuthority("EMPLOYER")  // Employer only
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()  // Public: API docs
-                .anyRequest().authenticated()  // All other endpoints require authentication
+                // 1. Allow Frontend Files (HTML, CSS, JS)
+                .requestMatchers("/", "/index.html", "/*.html", "/*.css", "/js/**").permitAll()
+
+                // 2. Allow Auth APIs
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // 3. Allow Public Job Search
+                .requestMatchers("/api/jobs/**").permitAll()
+
+                // 4. Protect Applicant-specific APIs
+                .requestMatchers("/api/applicant/applications/**").hasRole("APPLICANT")
+
+                // 5. Protect everything else
+                .anyRequest().authenticated()
         );
 
-        // STEP 3: Set Session Management to STATELESS
-        // - No server-side sessions (JWT is stateless)
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
-        // STEP 4: Add JWT Filter
-        // - Custom filter to extract and validate JWT from requests
-        // - Must run BEFORE UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // STEP 5: Exception Handling
-        // - Handle unauthorized access (401) and forbidden access (403)
         http.exceptionHandling(exception ->
                 exception.authenticationEntryPoint(authEntryPoint)
         );
 
-        // STEP 6: Enable CORS
-        http.cors(cors -> {});
+        http.cors(cors -> {
+        });
 
-        // TODO: Return http.build()
         return http.build();
     }
 }

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register | Jobappsys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          $api.renderHeader('register'); // Highlight 'register' in nav
+
+          const form = document.getElementById('register-form');
+          const status = document.getElementById('status');
+
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            status.className = 'muted';
+            status.textContent = 'Creating account...';
+
+            // Gather data
+            const payload = {
+                firstName: form.firstName.value.trim(),
+                lastName: form.lastName.value.trim(),
+                email: form.email.value.trim(),
+                password: form.password.value,
+                role: form.role.value // EMPLOYER or APPLICANT
+            };
+
+            try {
+              // Send request
+              const resp = await $api.apiFetch('/api/auth/register', {
+                method: 'POST',
+                auth: false, // No token needed to register
+                body: payload
+              });
+
+              // Success
+              status.className = 'success';
+              status.textContent = 'Registration successful! Redirecting to login...';
+
+              // Optional: You could auto-login here using the token from resp if your backend returns it on register
+              // But usually, we redirect users to login manually.
+              setTimeout(() => location.href = '/login.html', 1500);
+
+            } catch (e) {
+              status.className = 'error';
+              status.textContent = 'Registration failed: ' + (e.message || 'Unknown error');
+            }
+          });
+        });
+    </script>
+</head>
+<body>
+<main class="stack" style="max-width: 480px; margin: 32px auto;">
+    <h1>Create Account</h1>
+    <div id="status" class="muted"></div>
+
+    <form id="register-form" class="stack card">
+
+        <div class="row">
+            <div class="stack" style="flex:1">
+                <label>First Name</label>
+                <input name="firstName" type="text" placeholder="John" required>
+            </div>
+            <div class="stack" style="flex:1">
+                <label>Last Name</label>
+                <input name="lastName" type="text" placeholder="Doe" required>
+            </div>
+        </div>
+
+        <div class="stack">
+            <label>Email</label>
+            <input name="email" type="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="stack">
+            <label>Password</label>
+            <input name="password" type="password" placeholder="••••••••" required minlength="6">
+        </div>
+
+        <div class="stack">
+            <label>I am a...</label>
+            <select name="role">
+                <option value="APPLICANT">Job Seeker (Applicant)</option>
+                <option value="EMPLOYER">Employer (I post jobs)</option>
+            </select>
+        </div>
+
+        <div class="row" style="justify-content: space-between; margin-top: 10px;">
+            <a href="/login.html" style="font-size: 0.9em;">Already have an account?</a>
+            <button type="submit">Register</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

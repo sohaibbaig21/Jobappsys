@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Job Details | Jobappsys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          $api.renderHeader('jobs');
+          const container = document.getElementById('job-detail');
+          const status = document.getElementById('status');
+
+          // 1. Get ID from URL
+          const jobId = $api.qs('id');
+          if (!jobId) { status.textContent = 'No job ID provided.'; return; }
+
+          status.textContent = 'Loading details...';
+
+          try {
+            // 2. Fetch Job Details
+            const job = await $api.apiFetch(`/api/jobs/${jobId}`, { auth: false });
+            status.textContent = '';
+
+            // 3. Render Page
+            const title = job.title || 'Untitled';
+            const salary = job.salary ? `$${job.salary}` : 'N/A';
+            const desc = job.description || 'No description.';
+
+            container.innerHTML = `
+              <div class="card stack">
+                <h1>${title}</h1>
+                <div class="row muted">
+                   <span>📍 ${job.location || 'Remote'}</span>
+                   <span>💼 ${job.employmentType || 'Full-time'}</span>
+                   <span>💰 ${salary}</span>
+                </div>
+                <hr style="width:100%; border:0; border-top:1px solid #eee;">
+                <h3>Description</h3>
+                <p style="white-space: pre-wrap;">${desc}</p>
+
+                <div class="row" style="margin-top: 20px;">
+                    <button id="applyBtn" onclick="applyForJob(${job.id})">Apply Now</button>
+                    <a href="/jobs.html" class="btn secondary">Back to Jobs</a>
+                </div>
+                <div id="apply-msg" class="muted" style="margin-top:10px;"></div>
+              </div>
+            `;
+          } catch (e) {
+            status.className = 'error';
+            status.textContent = 'Error loading job: ' + (e.message || 'Job not found');
+          }
+        });
+
+        // --- APPLY LOGIC ---
+        async function applyForJob(id) {
+            const msg = document.getElementById('apply-msg');
+            const btn = document.getElementById('applyBtn');
+
+            // 1. Check if user is logged in
+            if (!$api.getAuth()) {
+                // Redirect to login if not logged in
+                window.location.href = `/login.html?next=/job.html?id=${id}`;
+                return;
+            }
+
+            // 2. Disable button while processing
+            btn.disabled = true;
+            btn.textContent = 'Applying...';
+            msg.className = 'muted';
+            msg.textContent = '';
+
+            try {
+                // 3. Send POST request to your Controller
+                await $api.apiFetch('/api/applicant/applications/apply', {
+                    method: 'POST',
+                    body: { jobPostId: id } // <--- Matches ApplicationRequest.java
+                });
+
+                // 4. Success Message
+                msg.className = 'success';
+                msg.textContent = '✅ Application Submitted Successfully!';
+                btn.textContent = 'Applied';
+            } catch (e) {
+                // 5. Error Handling
+                btn.disabled = false;
+                btn.textContent = 'Apply Now';
+                msg.className = 'error';
+
+                // Show the specific error message from your Service (e.g., "Already applied")
+                msg.textContent = '❌ ' + (e.message || 'Application failed');
+            }
+        }
+    </script>
+</head>
+<body>
+<main class="stack" style="max-width: 800px; margin: 0 auto;">
+    <div id="status" class="muted"></div>
+    <div id="job-detail"></div>
+</main>
+</body>
+</html>

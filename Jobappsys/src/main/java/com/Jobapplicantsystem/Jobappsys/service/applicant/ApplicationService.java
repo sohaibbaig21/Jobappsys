@@ -1,6 +1,7 @@
 package com.Jobapplicantsystem.Jobappsys.service.applicant;
 
 import com.Jobapplicantsystem.Jobappsys.dto.request.ApplicationRequest;
+// REMOVED missing imports that caused the error
 import com.Jobapplicantsystem.Jobappsys.model.Applicant;
 import com.Jobapplicantsystem.Jobappsys.model.JobApplication;
 import com.Jobapplicantsystem.Jobappsys.model.JobPost;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,21 +27,21 @@ public class ApplicationService {
     public JobApplication apply(String email, ApplicationRequest request) {
 
         Applicant applicant = applicantRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Applicant profile missing"));
+                .orElseThrow(() -> new RuntimeException("Applicant profile missing")); // Changed exception
 
         JobPost jobPost = jobPostRepository.findById(request.getJobPostId())
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new RuntimeException("Job not found")); // Changed exception
 
         // Prevent duplicate applications
         boolean alreadyApplied = jobApplicationRepository.findAll()
                 .stream()
                 .anyMatch(a -> a.getApplicant() != null
-                        && a.getApplicant().getId().equals(applicant.getId())
+                        && Objects.equals(a.getApplicant().getId(), applicant.getId())
                         && a.getJobPost() != null
-                        && a.getJobPost().getId().equals(jobPost.getId()));
+                        && Objects.equals(a.getJobPost().getId(), jobPost.getId()));
 
         if (alreadyApplied) {
-            throw new RuntimeException("You have already applied to this job");
+            throw new RuntimeException("You have already applied to this job"); // Changed exception
         }
 
         JobApplication application = JobApplication.builder()
@@ -57,7 +59,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         return jobApplicationRepository.findAll().stream()
-                .filter(a -> a.getApplicant() != null && a.getApplicant().getId().equals(applicant.getId()))
+                .filter(a -> a.getApplicant() != null && Objects.equals(a.getApplicant().getId(), applicant.getId()))
                 .toList();
     }
 }

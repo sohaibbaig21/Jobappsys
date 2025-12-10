@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Profile | Jobappsys</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/js/api.js"></script>
+  <script>
+    async function requireAuth() {
+      const auth = $api.getAuth();
+      if (!auth?.token) {
+        const next = encodeURIComponent(location.pathname + location.search);
+        location.href = `/login.html?next=${next}`;
+        throw new Error('Not authenticated');
+      }
+    }
+
+    function setStatus(type, msg) {
+      const el = document.getElementById('status');
+      el.className = type;
+      el.textContent = msg;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      $api.renderHeader('profile');
+      try {
+        await requireAuth();
+      } catch { return; }
+
+      setStatus('muted', 'Loading profile...');
+      try {
+        const data = await $api.apiFetch('/api/applicant/profile');
+        document.getElementById('profile-json').value = JSON.stringify(data, null, 2);
+        setStatus('', '');
+      } catch (e) {
+        setStatus('error', 'Failed to load profile: ' + (e.message || 'Unknown error'));
+      }
+
+      // Save handler
+      document.getElementById('save-btn').addEventListener('click', async () => {
+        setStatus('muted', 'Saving...');
+        let body;
+        try {
+          body = JSON.parse(document.getElementById('profile-json').value || '{}');
+        } catch (e) {
+          setStatus('error', 'Invalid JSON: ' + e.message);
+          return;
+        }
+        try {
+          const updated = await $api.apiFetch('/api/applicant/profile', { method: 'PUT', body });
+          document.getElementById('profile-json').value = JSON.stringify(updated, null, 2);
+          setStatus('success', 'Profile saved.');
+        } catch (e) {
+          setStatus('error', 'Save failed: ' + (e.message || 'Unknown error'));
+        }
+      });
+
+      // Upload resume handler
+      document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('resume').files[0];
+        if (!file) { setStatus('error', 'Please choose a file.'); return; }
+        const fd = new FormData();
+        fd.append('file', file);
+        setStatus('muted', 'Uploading resume...');
+        try {
+          const resp = await $api.apiFetch('/api/applicant/profile/upload-resume', { method: 'POST', body: fd });
+          setStatus('success', 'Upload successful: ' + (typeof resp === 'string' ? resp : JSON.stringify(resp)));
+        } catch (e) {
+          setStatus('error', 'Upload failed: ' + (e.message || 'Unknown error'));
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <main class="stack" style="max-width: 900px; margin: 16px auto;">
+    <h1>My Profile</h1>
+    <div id="status" class="muted"></div>
+
+    <section class="card stack">
+      <h2>Profile Data</h2>
+      <p class="muted">Edit your profile JSON and click Save. Avoid changing immutable fields like IDs or email unless intended.</p>
+      <textarea id="profile-json" rows="14" spellcheck="false" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></textarea>
+      <div class="row" style="justify-content: flex-end;">
+        <button id="save-btn">Save</button>
+      </div>
+    </section>
+
+    <section class="card stack">
+      <h2>Upload Resume</h2>
+      <form id="upload-form" class="row" enctype="multipart/form-data" style="gap: 8px;">
+        <input id="resume" type="file" accept=".pdf,.doc,.docx,.txt" required>
+        <button type="submit">Upload</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

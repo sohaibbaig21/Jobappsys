@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jobs | Jobappsys</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      $api.renderHeader('jobs');
+      const listEl = document.getElementById('jobs');
+      const status = document.getElementById('status');
+      status.textContent = 'Loading jobs...';
+      try {
+        const jobs = await $api.apiFetch('/api/jobs', { auth: false });
+        status.textContent = '';
+        if (!Array.isArray(jobs) || jobs.length === 0) {
+          status.textContent = 'No jobs found.';
+          return;
+        }
+        jobs.forEach(j => {
+          const item = document.createElement('div');
+          item.className = 'card item';
+          const title = j.title || 'Untitled';
+          const location = j.location || 'Unspecified location';
+          const employment = j.employmentType || '';
+          const salary = j.salary != null ? `Salary: ${j.salary}` : '';
+          item.innerHTML = `
+            <div class="row" style="justify-content: space-between;">
+              <div>
+                <div><strong>${title}</strong></div>
+                <div class="muted">${location} ${employment ? ' · ' + employment : ''}</div>
+              </div>
+              <a class="btn" href="/job.html?id=${encodeURIComponent(j.id)}">Details</a>
+            </div>
+            <div class="muted">${salary}</div>
+          `;
+          listEl.appendChild(item);
+        });
+      } catch (e) {
+        status.className = 'error';
+        status.textContent = 'Failed to load jobs: ' + (e.message || 'Unknown error');
+      }
+    });
+  </script>
+  <style>
+    .grid { display: grid; gap: 12px; }
+  </style>
+  </head>
+<body>
+  <main class="stack">
+    <h1>Job Listings</h1>
+    <div id="status" class="muted"></div>
+    <div id="jobs" class="list grid"></div>
+  </main>
+</body>
+</html>
