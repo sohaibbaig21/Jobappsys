@@ -20,7 +20,7 @@ public class EmployerJobController {
 
     private final JobPostService jobPostService;
 
-    // NEW: Inject these repositories to fetch applicants
+    //  Inject these repositories to fetch applicants
     private final JobPostRepository jobPostRepository;
     private final JobApplicationRepository jobApplicationRepository;
 
@@ -38,7 +38,7 @@ public class EmployerJobController {
         return ResponseEntity.ok(jobPostService.getMyJobs(email));
     }
 
-    // NEW ENDPOINT: Get applicants for a specific job (With Null Safety)
+    // NEW ENDPOINT: Get applicants who applied for a specific job
     @GetMapping("/{jobId}/applicants")
     public ResponseEntity<?> getJobApplicants(@PathVariable Long jobId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

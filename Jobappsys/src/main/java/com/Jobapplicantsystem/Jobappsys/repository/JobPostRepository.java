@@ -12,10 +12,7 @@ public interface JobPostRepository extends JpaRepository<JobPost, Long> {
     @Query("SELECT j FROM JobPost j LEFT JOIN FETCH j.questions LEFT JOIN FETCH j.employer WHERE j.id = :id")
     Optional<JobPost> findJobPostWithDetailsById(@Param("id") Long id);
 
-    // --- SEARCH QUERY ---
-    // FIXED: Removed "CONCAT" and "ILIKE".
-    // We use LOWER() LIKE LOWER() which is standard SQL and safer.
-    // The Service class now provides the "%" symbols.
+
     @Query("SELECT DISTINCT j FROM JobPost j LEFT JOIN FETCH j.employer LEFT JOIN FETCH j.questions WHERE " +
             // Avoid calling LOWER() on a null parameter to prevent provider errors
             "(:location IS NULL OR LOWER(j.location) LIKE :location) AND " +

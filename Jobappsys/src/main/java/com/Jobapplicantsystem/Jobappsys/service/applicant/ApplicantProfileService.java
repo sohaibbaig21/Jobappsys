@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+// Used betwen controller and repository
 @Service
 @RequiredArgsConstructor
 public class ApplicantProfileService {

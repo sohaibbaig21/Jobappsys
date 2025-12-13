@@ -19,6 +19,10 @@ import java.nio.file.Paths;
 @RequiredArgsConstructor
 public class FileStorageController {
 
+    // This FileStorageController.java is the "File Librarian" of your application.
+    //
+    //Its job is to find a specific resume when a user asks for it for Downloading Resume
+    // and send the file back to the browser safely. It has a smart "Failover System"
     private final SupabaseStorageClient supabaseStorageClient;
 
     @GetMapping("/resume/{filename}")
@@ -54,6 +58,7 @@ public class FileStorageController {
                 String detected = Files.probeContentType(filePath);
                 if (detected == null || detected.isBlank()) {
                     // Heuristic: if ends with .pdf use application/pdf
+                    //octet-stream forces the download of the file
                     detected = safeName.toLowerCase().endsWith(".pdf") ? "application/pdf" : "application/octet-stream";
                 }
 

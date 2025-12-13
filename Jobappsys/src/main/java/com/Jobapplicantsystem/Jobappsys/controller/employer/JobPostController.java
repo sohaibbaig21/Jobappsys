@@ -16,7 +16,8 @@ public class JobPostController {
     @Autowired
     private JobPostService jobPostService;
 
-
+// We have used UUID to avoid any conflicts in database. UUID is unique across all systems
+    // Also UUID improves security as database ID reveals pattern
     @PutMapping("/{id}")
     public ResponseEntity<?> updateJob(@PathVariable Long id, @RequestBody JobPostRequest request) {
         try {

@@ -6,7 +6,7 @@ import com.Jobapplicantsystem.Jobappsys.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+// Acts as middleman between HTTP requests and the AuthService
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

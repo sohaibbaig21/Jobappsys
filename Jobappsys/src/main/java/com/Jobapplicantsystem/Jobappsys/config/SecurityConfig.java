@@ -13,8 +13,20 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.List;
+
+
+//@Configuration tells Spring Boot to load this file
+// when the application starts so settings are loaded
+
+
+//@EnableWebSecurity It activates the Spring Security module the reason why security works
+
+// @RequiredArgsConstructor due to Lombok
+// it injects  jwtAuthFilter and authenticationProvider automatically. No boilerplate
+
+// @Bean it makes a method available to whole project
+
 
 @Configuration
 @EnableWebSecurity
@@ -37,23 +49,22 @@ public class SecurityConfig {
                                 "/index.html",
                                 "/login.html",
                                 "/register.html",
-                                "/jobs.html",               // Public Job Board
-                                "/job.html",                // Single Job Details
-                                // "/profile.html",         // Removed: generic profile page no longer used
-                                "/profile-setup.html",      // Setup Page
+                                "/jobs.html",
+                                "/job.html",
+                                "/profile-setup.html",
 
-                                // Applicant Specific Pages (Frontend Logic handles security)
+                                // Applicant  Pages
                                 "/my-profile.html",
                                 "/my-applications.html",
 
-                                // Employer Specific Pages (Frontend Logic handles security)
+                                // Employer  Pages
                                 "/employer-profile.html",
                                 "/employer-dashboard.html",
                                 "/post-job.html",
                                 "/edit-job.html",
                                 "/view-applicants.html",
 
-                                // Static Assets (CSS, JS, Images)
+                                // Static pages
                                 "/styles.css",
                                 "/favicon.ico",
                                 "/js/**",
@@ -61,11 +72,11 @@ public class SecurityConfig {
                                 "/images/**"
                         ).permitAll()
 
-                        // 👇 2. PUBLIC API ENDPOINTS
+                        // PUBLIC API ENDPOINTS   no bearer tokens needed
                         .requestMatchers("/api/auth/**").permitAll()   // Login/Register
                         .requestMatchers("/api/jobs/**").permitAll()   // Viewing Jobs
 
-                        // 👇 3. PROTECTED API ENDPOINTS (The Real Security)
+                        //   PROTECTED API ENDPOINTS bearer tokens needed
                         // Accessing data requires a Token + Specific Role
                         .requestMatchers("/api/employer/**").hasRole("EMPLOYER")
                         .requestMatchers("/api/applicant/**").hasRole("APPLICANT")
@@ -73,8 +84,8 @@ public class SecurityConfig {
                         // Downloads or File Access
                         .requestMatchers("/api/files/**").authenticated()
 
-                        // 👇 4. CATCH-ALL
-                        .anyRequest().authenticated()
+                        // CATCH-ALL
+                        .anyRequest().authenticated()   //This protects all new APIs from being public
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

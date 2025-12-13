@@ -12,18 +12,37 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+
+// This file is reponsible for telling spring boot how to
+// Load users from the database
+//Verify passwords
+//Handle login authentication
+
+
+
+//@RequiredArgsConstructor due to lombok
+//Automatically generates a constructor for all final fields
+
+
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
     private final UserRepository userRepository;
 
+    // userDetailsService() This creates a service that loads user data from the database
+    //
     @Bean
     public UserDetailsService userDetailsService() {
         // Use our custom UserDetailsServiceImpl here
         return new com.Jobapplicantsystem.Jobappsys.service.auth.UserDetailsServiceImpl(userRepository);
     }
 
+    // authenticationProvider() It Creates the authentication mechanism
+   // by combining
+    //UserDetailsService to find the user
+    //PasswordEncoder  to verify passwords
+    //
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();

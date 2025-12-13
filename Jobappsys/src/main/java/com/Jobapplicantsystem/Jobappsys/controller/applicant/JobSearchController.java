@@ -8,9 +8,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// handles job search and retrieval operations for applicants:
+//Search/Filter Jobs - Get a list of jobs with optional filters (location, employment type, sort)
+//Get Job Details - Retrieve a single job post by its ID
+
+
 @RestController
 @RequestMapping("/api/jobs") // <--- This matches the URL you are trying to reach
 public class JobSearchController {
+
+    // Injects dependency (alternative to @RequiredArgsConstructor)
+
+    // @RequiredArgsConstructor We use it because
+    //Controller needs JobPostService to fetch job data
+    //Spring automatically creates and injects the service instance
+
 
     @Autowired
     private JobPostService jobPostService;

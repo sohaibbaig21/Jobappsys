@@ -15,6 +15,11 @@ import java.util.List; // Import List
 import java.util.Map;
 import java.util.UUID; // Import UUID
 
+
+// Combines @Controller + @ResponseBody
+//Tells Spring this class handles HTTP requests
+//Automatically converts return values to JSON
+//
 @RestController
 @RequestMapping("/api/applicant/profile")
 @RequiredArgsConstructor
@@ -28,6 +33,7 @@ public class ApplicantProfileController {
     }
 
     // 1. Get Profile
+    // Maps HTTP GET requests to this method to read data
     @GetMapping
     public ResponseEntity<?> getProfile() {
         return ResponseEntity.ok(applicantProfileService.getProfile(getEmail()));
@@ -42,6 +48,8 @@ public class ApplicantProfileController {
 
     // 3. Upload Resume
     @PostMapping(path = "/upload-resume", consumes = {"multipart/form-data"})
+
+    // - Extracts query parameters or form data from the request
     public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body("No file uploaded");
@@ -73,6 +81,12 @@ public class ApplicantProfileController {
 
     // 6. Update Applicant Education
     @PutMapping("/education/{id}")
+
+    //  @RequestBody Converts JSON from request body into a Java object
+    //@PathVariable  Extracts dynamic values from URL path
+
+    //ResponseEntity here we response Created (201): No Content (204):  Bad Request (400):
+    // Internal Server Error (500):
     public ResponseEntity<ApplicantEducationDto> updateEducation(@PathVariable UUID id, @RequestBody ApplicantEducationDto educationDto) {
         ApplicantEducationDto updatedEducation = applicantProfileService.updateEducation(getEmail(), id, educationDto);
         return ResponseEntity.ok(updatedEducation);

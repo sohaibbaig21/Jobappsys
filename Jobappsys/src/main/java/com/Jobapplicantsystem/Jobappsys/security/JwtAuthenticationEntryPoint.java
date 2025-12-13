@@ -8,6 +8,8 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+// User tries to login without bearer token.
+// Not allowed. Error 401  unauthorized requests shown
 
 /**
  * JwtAuthenticationEntryPoint

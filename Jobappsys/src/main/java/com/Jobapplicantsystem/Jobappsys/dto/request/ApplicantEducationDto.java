@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.UUID;
-
+// Service uses this dto to map objects in database
 @Data
-@Builder
+@Builder  // lets you create complex objects in a clean, readable way
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicantEducationDto {

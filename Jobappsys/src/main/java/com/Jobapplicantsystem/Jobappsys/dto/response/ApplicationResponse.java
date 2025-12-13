@@ -12,6 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
+
+// this information is split across 3-4 different tables (users, job_posts, applications, answers).
+// This DTO merges them into one object so the Frontend doesn't have to make 4 different API calls.
 public class ApplicationResponse {
     private Long id;
     private Long jobPostId;

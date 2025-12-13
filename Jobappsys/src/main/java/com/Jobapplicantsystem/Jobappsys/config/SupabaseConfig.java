@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
  * Supabase Configuration
  *
  * PURPOSE: Configure connection to Supabase services
- * - Supabase Storage API for file uploads (resumes)
  * - Connection settings and authentication
  *
  * PROPERTIES REQUIRED IN application.properties:
@@ -31,9 +30,6 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class SupabaseConfig {
 
-    // ============================================================
-    // Inject properties from application.properties
-    // ============================================================
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -47,12 +43,6 @@ public class SupabaseConfig {
     @Value("${supabase.storage.bucket.resumes}")
     private String resumesBucketName;
 
-    // ============================================================
-    // OKHTTP CLIENT BEAN
-    // PURPOSE:
-    // - Handles all HTTP requests to Supabase REST API
-    // - Adds authentication headers automatically
-    // ============================================================
     @Bean
     public OkHttpClient supabaseHttpClient() {
 
@@ -77,15 +67,7 @@ public class SupabaseConfig {
                 .build();
     }
 
-    // ============================================================
-    // SUPABASE STORAGE CLIENT BEAN
-    //
-    // Custom class that performs:
-    // - Upload Resume
-    // - Download Resume
-    // - Delete Resume
-    // - Generate Signed URL
-    // ============================================================
+
     @Bean
     public SupabaseStorageClient supabaseStorageClient() {
         return new SupabaseStorageClient(
@@ -96,10 +78,6 @@ public class SupabaseConfig {
         );
     }
 
-    // ============================================================
-    // OPTIONAL: EXPOSE INDIVIDUAL VALUES AS BEANS
-    // (Useful if other services need these values)
-    // ============================================================
 
     @Bean
     public String supabaseUrl() {

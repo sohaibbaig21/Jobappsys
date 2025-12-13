@@ -16,8 +16,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
+ // This code basically
+ // determines if the user is authenticated for that request
+// Does the user have bearer token or not
 @Component
+// Tells spring that it is usable
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

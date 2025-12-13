@@ -19,6 +19,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import com.Jobapplicantsystem.Jobappsys.exception.ResourceNotFoundException;
 
+//What does this file do?
+// Apply for a job - Applicants submit applications with answers and resume
+//View my applications - Get all applications submitted by the logged-in user
+//View applications for a job - Employers see all applications for their job post
+//Update application status - Change status (APPLIED → HIRED/REJECTED)
+//Delete application - Remove an application
+
+
+
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
