@@ -1,30 +1,45 @@
 package com.Jobapplicantsystem.Jobappsys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Table(name = "job_applications")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class JobApplication {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "applicant_id")
-    private Applicant applicant;
-
-    @ManyToOne
-    @JoinColumn(name = "job_post_id")
+    @JoinColumn(name = "job_post_id", nullable = false)
     private JobPost jobPost;
 
-    @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL)
-    private List<ApplicationAnswer> answers;
+    @ManyToOne
+    @JoinColumn(name = "applicant_id", nullable = false)
+    private Applicant applicant;
 
-    @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL)
-    private List<ApplicationStatusHistory> statusHistory;
+    private String status; // APPLIED, HIRED, REJECTED
+
+    @Column(name = "applied_at")
+    private LocalDateTime appliedAt;
+
+    // Replaced answersJson with OneToMany relationship
+    @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @JsonIgnore // Prevents infinite recursion during JSON serialization
+    private List<JobApplicationAnswer> answers = new java.util.ArrayList<>();
+
+    @Column(name = "resume_filename")
+    private String resumeFilename;
 }

@@ -1,68 +1,114 @@
 package com.Jobapplicantsystem.Jobappsys.controller.applicant;
 
-import com.Jobapplicantsystem.Jobappsys.model.Applicant;
-import com.Jobapplicantsystem.Jobappsys.model.User;
-import com.Jobapplicantsystem.Jobappsys.repository.ApplicantRepository;
-import com.Jobapplicantsystem.Jobappsys.repository.UserRepository;
+import com.Jobapplicantsystem.Jobappsys.dto.request.ApplicantProfileDto; // <--- DTO IMPORT
+import com.Jobapplicantsystem.Jobappsys.dto.request.ApplicantEducationDto; // Import ApplicantEducationDto
+import com.Jobapplicantsystem.Jobappsys.dto.request.ApplicantSkillDto; // Import ApplicantSkillDto
+import com.Jobapplicantsystem.Jobappsys.service.applicant.ApplicantProfileService; // <--- SERVICE IMPORT
+import com.Jobapplicantsystem.Jobappsys.util.SupabaseStorageClient; // Import SupabaseStorageClient
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List; // Import List
+import java.util.Map;
+import java.util.UUID; // Import UUID
 
 @RestController
 @RequestMapping("/api/applicant/profile")
 @RequiredArgsConstructor
 public class ApplicantProfileController {
 
-    private final ApplicantRepository applicantRepository;
-    private final UserRepository userRepository;
+    private final ApplicantProfileService applicantProfileService;
+    private final SupabaseStorageClient supabaseStorageClient; // Inject SupabaseStorageClient
 
-    @PostMapping
-    public ResponseEntity<?> updateProfile(@RequestBody Applicant profileData) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // 1. Fetch existing User (Account Info)
-        User user = userRepository.findByEmail(email).orElseThrow();
-
-        // 2. Fetch or Create Applicant (Profile Info)
-        Applicant applicant = applicantRepository.findByEmail(email).orElse(new Applicant());
-
-        // 3. Update USER fields (Name, Email) if provided
-        if (profileData.getFirstName() != null && !profileData.getFirstName().isBlank()) {
-            user.setFirstName(profileData.getFirstName());
-        }
-        if (profileData.getLastName() != null && !profileData.getLastName().isBlank()) {
-            user.setLastName(profileData.getLastName());
-        }
-        // Be careful updating email as it changes their login!
-        if (profileData.getEmail() != null && !profileData.getEmail().isBlank()) {
-            user.setEmail(profileData.getEmail());
-        }
-        userRepository.save(user); // Save User table changes
-
-        // 4. Update APPLICANT fields
-        applicant.setUser(user);
-        applicant.setPhone(profileData.getPhone());
-        applicant.setCity(profileData.getCity());
-        applicant.setPostalCode(profileData.getPostalCode());
-        applicant.setRelocate(profileData.getRelocate());
-        applicant.setJobTitle(profileData.getJobTitle());
-        applicant.setJobType(profileData.getJobType());
-        applicant.setWorkAuth(profileData.getWorkAuth());
-        applicant.setSummary(profileData.getSummary());
-
-        applicant.setEducationJson(profileData.getEducationJson());
-        applicant.setExperienceJson(profileData.getExperienceJson());
-        applicant.setSkillsJson(profileData.getSkillsJson());
-
-        applicantRepository.save(applicant); // Save Applicant table changes
-
-        return ResponseEntity.ok("Profile Updated Successfully");
+    private String getEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
+    // 1. Get Profile
     @GetMapping
     public ResponseEntity<?> getProfile() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(applicantRepository.findByEmail(email).orElse(new Applicant()));
+        return ResponseEntity.ok(applicantProfileService.getProfile(getEmail()));
+    }
+
+    // 2. Update Profile Info
+    @PutMapping
+    public ResponseEntity<?> updateProfile(@RequestBody ApplicantProfileDto request) {
+        applicantProfileService.updateProfile(getEmail(), request);
+        return ResponseEntity.ok(Map.of("message", "Profile Updated Successfully"));
+    }
+
+    // 3. Upload Resume
+    @PostMapping(path = "/upload-resume", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body("No file uploaded");
+        }
+        try {
+            String userId = applicantProfileService.getApplicantIdByEmail(getEmail()).toString();
+            String fileUrl = supabaseStorageClient.uploadFile(file, userId);
+            String originalFileName = file.getOriginalFilename(); // Extract original file name
+            Integer fileSizeKb = (int) (file.getSize() / 1024); // Calculate file size in KB
+            applicantProfileService.updateResume(getEmail(), fileUrl, originalFileName, fileSizeKb);
+            return ResponseEntity.ok(Map.of("fileUrl", fileUrl, "message", "Resume uploaded successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error uploading resume: " + e.getMessage());
+        }
+    }
+
+    // 4. Get Applicant Education
+    @GetMapping("/education")
+    public ResponseEntity<List<ApplicantEducationDto>> getApplicantEducation() {
+        return ResponseEntity.ok(applicantProfileService.getApplicantEducation(getEmail()));
+    }
+
+    // 5. Add Applicant Education
+    @PostMapping("/education")
+    public ResponseEntity<ApplicantEducationDto> addEducation(@RequestBody ApplicantEducationDto educationDto) {
+        ApplicantEducationDto savedEducation = applicantProfileService.addEducation(getEmail(), educationDto);
+        return ResponseEntity.ok(savedEducation);
+    }
+
+    // 6. Update Applicant Education
+    @PutMapping("/education/{id}")
+    public ResponseEntity<ApplicantEducationDto> updateEducation(@PathVariable UUID id, @RequestBody ApplicantEducationDto educationDto) {
+        ApplicantEducationDto updatedEducation = applicantProfileService.updateEducation(getEmail(), id, educationDto);
+        return ResponseEntity.ok(updatedEducation);
+    }
+
+    // 7. Delete Applicant Education
+    @DeleteMapping("/education/{id}")
+    public ResponseEntity<Void> deleteEducation(@PathVariable UUID id) {
+        applicantProfileService.deleteEducation(getEmail(), id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 8. Get Applicant Skills
+    @GetMapping("/skills")
+    public ResponseEntity<List<ApplicantSkillDto>> getApplicantSkills() {
+        return ResponseEntity.ok(applicantProfileService.getApplicantSkills(getEmail()));
+    }
+
+    // 9. Add Applicant Skill
+    @PostMapping("/skills")
+    public ResponseEntity<ApplicantSkillDto> addSkill(@RequestBody ApplicantSkillDto skillDto) {
+        ApplicantSkillDto savedSkill = applicantProfileService.addSkill(getEmail(), skillDto);
+        return ResponseEntity.ok(savedSkill);
+    }
+
+    // 10. Update Applicant Skill
+    @PutMapping("/skills/{id}")
+    public ResponseEntity<ApplicantSkillDto> updateSkill(@PathVariable UUID id, @RequestBody ApplicantSkillDto skillDto) {
+        ApplicantSkillDto updatedSkill = applicantProfileService.updateSkill(getEmail(), id, skillDto);
+        return ResponseEntity.ok(updatedSkill);
+    }
+
+    // 11. Delete Applicant Skill
+    @DeleteMapping("/skills/{id}")
+    public ResponseEntity<Void> deleteSkill(@PathVariable UUID id) {
+        applicantProfileService.deleteSkill(getEmail(), id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -2,45 +2,55 @@ package com.Jobapplicantsystem.Jobappsys.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+    private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(name = "last_name")
     private String lastName;
 
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_type")
-    private UserType userType;
+    private Role role;
 
-    // --- THIS IS THE MISSING FIELD ---
-    @Column(name = "is_active")
-    @Builder.Default // Ensures it defaults to TRUE when using .builder()
-    private Boolean isActive = true;
+    @Column(name = "company_description", columnDefinition = "TEXT")
+    private String companyDescription;
 
-    // Enum for Roles
-    public enum UserType {
-        APPLICANT,
-        EMPLOYER,
-        ADMIN
+    // Prevents Infinite Loop Crash
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore // Prevents infinite recursion during JSON serialization
+    private Applicant applicant;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
+
+    @Override public String getUsername() { return email; }
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 }

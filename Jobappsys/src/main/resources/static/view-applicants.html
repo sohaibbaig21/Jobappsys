@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Applicants | JobAppSys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+</head>
+<body>
+<main class="stack" style="max-width: 1000px; margin: 0 auto;">
+    <div class="row" style="align-items: center;">
+        <a href="/employer-dashboard.html" class="btn secondary">← Back to Dashboard</a>
+        <h1>Applicants</h1>
+    </div>
+
+    <div id="status" class="muted">Loading applicants...</div>
+
+    <div class="card">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #eee;">
+                <th style="padding: 10px;">Candidate</th>
+                <th style="padding: 10px; width: 40%;">Screening Answers</th>
+                <th style="padding: 10px;">Status</th>
+                <th style="padding: 10px;">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="applicant-list"></tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        $api.renderHeader();
+        const listEl = document.getElementById('applicant-list');
+        const status = document.getElementById('status');
+
+        // Get Job ID from URL
+        const jobId = $api.qs('jobId');
+
+        if (!jobId) {
+            status.textContent = 'Error: No Job ID provided.';
+            return;
+        }
+
+        try {
+            const response = await $api.apiFetch(`/api/employer/jobs/${jobId}/applicants`);
+            const applicants = await response.json(); // Parse the response as JSON
+            status.textContent = '';
+
+            if (!Array.isArray(applicants) || applicants.length === 0) {
+                listEl.innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center;">No applicants yet.</td></tr>';
+                return;
+            }
+
+            listEl.innerHTML = applicants.map(app => {
+                // Logic to display answers nicely
+                let answersHtml = '<span class="muted">No questions answered</span>';
+
+                if (app.answers && app.answers !== "[]") {
+                    try {
+                        const parsed = JSON.parse(app.answers);
+                        if (parsed.length > 0) {
+                            answersHtml = `<div style="font-size: 0.9em; background: #f8f9fa; padding: 8px; border-radius: 4px;">
+                                ${parsed.map(a => `
+                                    <div style="margin-bottom: 4px;">
+                                        <span class="muted">${a.question}</span><br>
+                                        <strong>${a.answer}</strong>
+                                    </div>
+                                `).join('')}
+                            </div>`;
+                        }
+                    } catch (e) {
+                        answersHtml = '<span class="error">Error parsing answers</span>';
+                    }
+                }
+
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; vertical-align: top;">
+                        <strong>${app.applicantName}</strong><br>
+                        <a href="mailto:${app.applicantEmail}">${app.applicantEmail}</a><br>
+                        <span class="muted">📞 ${app.applicantPhone || 'N/A'}</span><br>
+                        <span class="muted">Applied: ${new Date(app.appliedDate).toLocaleDateString()}</span>
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        ${answersHtml}
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        <span class="badge ${app.status === 'HIRED' ? 'success' : 'primary'}">${app.status}</span>
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        <div class="stack" style="gap: 5px;">
+                            ${(() => {
+                                const href = app.resumeFilename;
+                                if (!href || href.trim() === '') {
+                                    return '<button class="btn small" disabled title="No resume uploaded">No Resume</button>';
+                                }
+                                // If it's a full URL (e.g., Supabase public URL), use it directly
+                                if (/^https?:\/\//i.test(href)) {
+                                    return `<a class="btn small" href="${href}" target="_blank" rel="noopener">View Resume</a>`;
+                                }
+                                // Otherwise, assume backend can serve it via files endpoint
+                                const safePath = encodeURIComponent(href);
+                                const url = `${$api._apiBase}/api/files/resume/${safePath}`;
+                                return `<a class="btn small" href="${url}" target="_blank" rel="noopener">View Resume</a>`;
+                            })()}
+                            <button class="btn small secondary" onclick="alert('Status update coming soon')">Reject</button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+
+        } catch (e) {
+            status.className = 'error';
+            status.textContent = 'Error loading applicants: ' + e.message;
+        }
+    });
+</script>
+</body>
+</html>

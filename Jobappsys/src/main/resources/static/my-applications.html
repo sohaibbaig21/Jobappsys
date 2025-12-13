@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>My Applications | JobAppSys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+</head>
+<body>
+<main class="stack" style="max-width: 800px; margin: 0 auto;">
+    <div class="row" style="align-items: center;">
+        <a href="/jobs.html" class="btn secondary">← Back to Jobs</a>
+        <h1>My Applications</h1>
+    </div>
+
+    <div id="status" class="muted">Loading...</div>
+    <div id="app-list" class="list"></div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        $api.renderHeader();
+        const listEl = document.getElementById('app-list');
+        const status = document.getElementById('status');
+
+        try {
+            // Fetch applications for the logged-in user
+            const apps = await $api.apiFetch('/api/applicant/applications');
+            status.textContent = '';
+
+            if (!apps || apps.length === 0) {
+                status.innerHTML = 'You haven\'t applied to any jobs. <a href="/jobs.html">Browse Jobs</a>';
+                return;
+            }
+
+            //
+            // Visualizing the flow: Applied -> Interview -> Hired/Rejected
+
+            apps.forEach(app => {
+                // Safety check: sometimes the job might be deleted, so we check if jobPost exists
+                const jobTitle = app.jobPost ? app.jobPost.title : 'Unknown Job';
+                const jobLoc = app.jobPost ? app.jobPost.location : 'Unknown Location';
+
+                const item = document.createElement('div');
+                item.className = 'card stack';
+                item.innerHTML = `
+                    <div class="row" style="justify-content: space-between;">
+                        <h3>${jobTitle}</h3>
+                        <span class="badge ${getStatusColor(app.status)}">${app.status}</span>
+                    </div>
+                    <div class="muted">
+                        Applied on: ${new Date(app.appliedAt).toLocaleDateString()} <br>
+                        Location: ${jobLoc}
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+
+        } catch (e) {
+            status.className = 'error';
+            status.textContent = 'Error: ' + e.message;
+        }
+    });
+
+    function getStatusColor(status) {
+        if (status === 'HIRED') return 'success';
+        if (status === 'REJECTED') return 'error';
+        return 'primary'; // Default for APPLIED/INTERVIEW
+    }
+</script>
+</body>
+</html>

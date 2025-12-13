@@ -3,16 +3,21 @@ package com.Jobapplicantsystem.Jobappsys.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Entity
+@Table(name = "application_answers")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ApplicationAnswer {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID answerId;
 
+    @Column(name = "answer_text")
     private String answerText;
 
     @ManyToOne
@@ -21,5 +26,8 @@ public class ApplicationAnswer {
 
     @ManyToOne
     @JoinColumn(name = "question_id")
-    private JobQuestion jobQuestion;
+    private JobPostQuestion jobPostQuestion; // Changed from JobQuestion to JobPostQuestion
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

@@ -16,14 +16,22 @@ public class JobPostController {
     @Autowired
     private JobPostService jobPostService;
 
-    @PostMapping
-    public ResponseEntity<JobPostResponse> createJob(@RequestBody JobPostRequest request) {
-        return ResponseEntity.ok(jobPostService.createJobPost(request));
-    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<JobPostResponse> updateJob(@PathVariable Long id, @RequestBody JobPostRequest request) {
-        return ResponseEntity.ok(jobPostService.updateJobPost(id, request));
+    public ResponseEntity<?> updateJob(@PathVariable Long id, @RequestBody JobPostRequest request) {
+        try {
+            return ResponseEntity.ok(jobPostService.updateJobPost(id, request));
+        } catch (NullPointerException e) {
+            return ResponseEntity.status(400).body("Missing required question text."); // 400 Bad Request
+        } catch (RuntimeException e) {
+            if ("Job not found".equals(e.getMessage())) {
+                return ResponseEntity.status(404).body(e.getMessage()); // 404 Not Found
+            }
+            return ResponseEntity.status(500).body(e.getMessage()); // Other RuntimeExceptions as 500
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("An unexpected server error occurred during job update."); // 500 Internal Server Error
+        }
     }
 
     @DeleteMapping("/{id}")

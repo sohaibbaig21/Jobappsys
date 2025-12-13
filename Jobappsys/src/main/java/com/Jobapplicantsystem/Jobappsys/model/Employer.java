@@ -2,25 +2,49 @@ package com.Jobapplicantsystem.Jobappsys.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
+@Table(name = "employers")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Employer {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator
+    @Column(name = "employer_id", columnDefinition = "uuid")
+    private UUID employerId;
 
+    @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
+    private UUID userId;
+
+    @Column(name = "company_name", nullable = false)
     private String companyName;
-    private String email;
-    private String password;
 
-    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL)
-    private List<JobPost> jobPosts;
+    @Column(name = "company_description", columnDefinition = "text")
+    private String companyDescription;
 
-    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL)
-    private List<EmployerReview> reviews;
+    @Column(name = "company_website")
+    private String companyWebsite;
+
+    @Column(name = "company_size")
+    private String companySize;
+
+    @Column(name = "industry")
+    private String industry;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }

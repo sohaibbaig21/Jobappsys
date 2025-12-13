@@ -15,10 +15,14 @@ public class JobSearchController {
     @Autowired
     private JobPostService jobPostService;
 
-    // GET http://localhost:8081/api/jobs
+    // GET http://localhost:8081/api/jobs?location=&type=&sort=
     @GetMapping
-    public ResponseEntity<List<JobPostResponse>> getAllJobs() {
-        return ResponseEntity.ok(jobPostService.getAllJobPosts());
+    public ResponseEntity<List<JobPostResponse>> getJobs(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false, name = "type") String employmentType,
+            @RequestParam(required = false, defaultValue = "relevant") String sort
+    ) {
+        return ResponseEntity.ok(jobPostService.searchAndFilter(location, employmentType, sort));
     }
 
     // GET http://localhost:8081/api/jobs/{id}

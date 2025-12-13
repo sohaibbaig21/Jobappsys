@@ -19,13 +19,15 @@
 
           try {
             // 2. Fetch Job Details
-            const job = await $api.apiFetch(`/api/jobs/${jobId}`, { auth: false });
+            const response = await $api.apiFetch(`/api/jobs/${jobId}`, { auth: false });
+            const job = await response.json();
             status.textContent = '';
 
             // 3. Render Page
             const title = job.title || 'Untitled';
             const salary = job.salary ? `$${job.salary}` : 'N/A';
             const desc = job.description || 'No description.';
+            const questions = job.questions || []; // Get questions
 
             container.innerHTML = `
               <div class="card stack">
@@ -39,7 +41,35 @@
                 <h3>Description</h3>
                 <p style="white-space: pre-wrap;">${desc}</p>
 
+                <!-- Job Questions Section -->
+                <div id="job-questions" class="stack" style="margin-top: 25px;">
+                    ${questions.length > 0 ? '<h3>Questions</h3>' : ''}
+                    ${questions.map(q => `
+                        <div class="question-item" data-question-id="${q.id}" data-question-type="${q.questionType}" data-is-required="${q.isRequired}">
+                            <label>${q.questionText} ${q.isRequired ? '<span style="color: red;">*</span>' : ''}</label>
+                            ${q.questionType === 'TEXT' ? `<textarea rows="4" ${q.isRequired ? 'required' : ''}></textarea>` : ''}
+                            ${q.questionType === 'SINGLE_CHOICE' && q.options ? `
+                                ${q.options.map(option => `
+                                    <div>
+                                        <input type="radio" name="question-${q.id}" value="${option}" ${q.isRequired ? 'required' : ''}>
+                                        <label>${option}</label>
+                                    </div>
+                                `).join('')}
+                            ` : ''}
+                            ${q.questionType === 'MULTI_CHOICE' && q.options ? `
+                                ${q.options.map(option => `
+                                    <div>
+                                        <input type="checkbox" name="question-${q.id}" value="${option}">
+                                        <label>${option}</label>
+                                    </div>
+                                `).join('')}
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+
                 <div class="row" style="margin-top: 20px;">
+                    <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="margin-bottom: 10px;">
                     <button id="applyBtn" onclick="applyForJob(${job.id})">Apply Now</button>
                     <a href="/jobs.html" class="btn secondary">Back to Jobs</a>
                 </div>
@@ -56,6 +86,8 @@
         async function applyForJob(id) {
             const msg = document.getElementById('apply-msg');
             const btn = document.getElementById('applyBtn');
+            const questionContainer = document.getElementById('job-questions');
+            const resumeFileInput = document.getElementById('resumeFile'); // Get the file input
 
             // 1. Check if user is logged in
             if (!$api.getAuth()) {
@@ -64,20 +96,81 @@
                 return;
             }
 
-            // 2. Disable button while processing
+            // 2. Collect Answers
+            const answers = [];
+            const questionElements = questionContainer.querySelectorAll('div[data-question-id]');
+
+            for (const qEl of questionElements) {
+                const questionId = qEl.dataset.questionId;
+                const questionType = qEl.dataset.questionType;
+                const isRequired = qEl.dataset.isRequired === 'true';
+                let answerText = '';
+
+                if (questionType === 'TEXT') {
+                    const input = qEl.querySelector('textarea');
+                    answerText = input ? input.value : '';
+                } else if (questionType === 'SINGLE_CHOICE') {
+                    const checkedRadio = qEl.querySelector('input[type="radio"]:checked');
+                    answerText = checkedRadio ? checkedRadio.value : '';
+                } else if (questionType === 'MULTI_CHOICE') {
+                    const checkedCheckboxes = qEl.querySelectorAll('input[type="checkbox"]:checked');
+                    answerText = Array.from(checkedCheckboxes).map(cb => cb.value).join(',');
+                }
+
+                if (isRequired && !answerText) {
+                    msg.className = 'error';
+                    msg.textContent = 'Please answer all required questions.';
+                    btn.disabled = false;
+                    btn.textContent = 'Apply Now';
+                    return;
+                }
+
+                
+                answers.push({
+                    questionId: questionId, // Send as string, not parsed integer
+                    answerText: answerText
+                });
+            }
+
+            // 3. Disable button while processing
             btn.disabled = true;
             btn.textContent = 'Applying...';
             msg.className = 'muted';
             msg.textContent = '';
 
             try {
-                // 3. Send POST request to your Controller
-                await $api.apiFetch('/api/applicant/applications/apply', {
+                const form = new FormData();
+                form.append('applicationRequest', new Blob([JSON.stringify({ answers: answers })], { type: 'application/json' }));
+                // Append resume file if selected
+                if (resumeFileInput && resumeFileInput.files.length > 0) {
+                    form.append('resumeFile', resumeFileInput.files[0]);
+                }
+
+                const response = await $api.apiFetch(`/api/applications/apply/${id}`, {
                     method: 'POST',
-                    body: { jobPostId: id } // <--- Matches ApplicationRequest.java
+                    body: form,
+                    auth: true // Requires authentication
+                    // NOTE: Do NOT set Content-Type for FormData; browser sets it automatically
                 });
 
-                // 4. Success Message
+                // If backend returns an error (e.g., 400/409/500), don't show success
+                if (!response.ok) {
+                    let errorMsg = '';
+                    try {
+                        // Try to read JSON error first
+                        const data = await response.clone().json();
+                        errorMsg = data.message || data.error || JSON.stringify(data);
+                    } catch (_) {
+                        try {
+                            errorMsg = await response.text();
+                        } catch (_) {
+                            errorMsg = `Request failed (HTTP ${response.status})`;
+                        }
+                    }
+                    throw new Error(errorMsg || `Request failed (HTTP ${response.status})`);
+                }
+
+                // 4. Success Message (only if response.ok)
                 msg.className = 'success';
                 msg.textContent = '✅ Application Submitted Successfully!';
                 btn.textContent = 'Applied';

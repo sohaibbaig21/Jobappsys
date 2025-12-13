@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employer Profile - JobAppSys</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #f6f7f9; margin: 0; }
+    .container { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p.sub { color: #6b7280; margin-top: 0; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    textarea { min-height: 120px; resize: vertical; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    .actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+    .btn { padding: 10px 16px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-weight: 600; }
+    .primary { background: #2563eb; color: #fff; }
+    .secondary { background: #fff; color: #111827; border-color: #d1d5db; }
+    .success { color: #065f46; background: #d1fae5; border: 1px solid #10b981; padding: 8px 12px; border-radius: 8px; }
+    .error { color: #7f1d1d; background: #fee2e2; border: 1px solid #ef4444; padding: 8px 12px; border-radius: 8px; }
+    .hidden { display: none; }
+  </style>
+  <script src="/js/api.js"></script>
+</head>
+<body>
+
+<script>
+  // Render header with nav
+  $api.renderHeader('employer-profile');
+
+  // Guard: only allow EMPLOYER accounts to use this page's APIs
+  const auth = $api.getAuth();
+  if (!auth) {
+    window.location.href = '/login.html?next=/employer-profile.html';
+  } else if (auth.role !== 'EMPLOYER') {
+    alert('This page is for employer accounts only.');
+    window.location.href = '/';
+  }
+</script>
+
+<div class="container">
+  <div class="card">
+    <h1>Employer Profile</h1>
+    <p class="sub">Tell applicants about your company. These details appear on your job posts.</p>
+
+    <div id="msg" class="hidden"></div>
+
+    <form id="profileForm">
+      <div class="full">
+        <label for="companyName">Company Name *</label>
+        <input type="text" id="companyName" required placeholder="e.g. Acme Inc">
+      </div>
+
+      <div class="full">
+        <label for="companyDescription">Company Description</label>
+        <textarea id="companyDescription" placeholder="What does your company do? What's your mission?"></textarea>
+      </div>
+
+      <div>
+        <label for="companyWebsite">Company Website</label>
+        <input type="text" id="companyWebsite" placeholder="https://example.com">
+      </div>
+
+      <div>
+        <label for="companySize">Company Size</label>
+        <input type="text" id="companySize" placeholder="e.g. 11-50, 51-200">
+      </div>
+
+      <div>
+        <label for="industry">Industry</label>
+        <input type="text" id="industry" placeholder="e.g. FinTech, Healthcare">
+      </div>
+
+      <div>
+        <label for="logoUrl">Logo URL</label>
+        <input type="text" id="logoUrl" placeholder="https://.../logo.png">
+      </div>
+
+      <div class="full actions">
+        <button type="button" class="btn secondary" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('profileForm');
+  const msg = document.getElementById('msg');
+
+  function showMessage(type, text) {
+    msg.className = type;
+    msg.textContent = text;
+    if (type === 'hidden') return;
+    setTimeout(() => { msg.className = 'hidden'; }, 4000);
+  }
+
+  let existing = null; // track if profile exists
+
+  async function loadProfile() {
+    try {
+      const res = await $api.apiFetch('/api/employer/profile', { method: 'GET' });
+      if (res.ok) {
+        existing = await res.json();
+        document.getElementById('companyName').value = existing.companyName || '';
+        document.getElementById('companyDescription').value = existing.companyDescription || '';
+        document.getElementById('companyWebsite').value = existing.companyWebsite || '';
+        document.getElementById('companySize').value = existing.companySize || '';
+        document.getElementById('industry').value = existing.industry || '';
+        document.getElementById('logoUrl').value = existing.logoUrl || '';
+      } else if (res.status === 404) {
+        existing = null; // no profile yet
+      } else if (res.status === 401 || res.status === 403) {
+        $api.logout();
+      } else {
+        const t = await res.text();
+        console.error('Load error', t);
+        showMessage('error', 'Could not load profile');
+      }
+    } catch (e) {
+      console.error(e);
+      showMessage('error', 'Network error loading profile');
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      companyName: document.getElementById('companyName').value.trim(),
+      companyDescription: document.getElementById('companyDescription').value.trim(),
+      companyWebsite: document.getElementById('companyWebsite').value.trim(),
+      companySize: document.getElementById('companySize').value.trim(),
+      industry: document.getElementById('industry').value.trim(),
+      logoUrl: document.getElementById('logoUrl').value.trim(),
+    };
+
+    if (!payload.companyName) {
+      showMessage('error', 'Company name is required');
+      return;
+    }
+
+    try {
+      const method = existing ? 'PUT' : 'POST';
+      const res = await $api.apiFetch('/api/employer/profile', { method, body: payload });
+      if (res.ok) {
+        existing = await res.json();
+        showMessage('success', 'Profile saved');
+      } else if (res.status === 401 || res.status === 403) {
+        $api.logout();
+      } else {
+        const t = await res.text();
+        console.error('Save error', t);
+        showMessage('error', 'Could not save profile');
+      }
+    } catch (e) {
+      console.error(e);
+      showMessage('error', 'Network error saving profile');
+    }
+  });
+
+  document.getElementById('cancelBtn').addEventListener('click', () => {
+    window.location.href = '/employer-dashboard.html';
+  });
+
+  loadProfile();
+</script>
+
+</body>
+</html>

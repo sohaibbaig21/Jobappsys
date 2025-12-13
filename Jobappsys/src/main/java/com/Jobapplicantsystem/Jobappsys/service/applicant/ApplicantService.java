@@ -6,7 +6,6 @@ import com.Jobapplicantsystem.Jobappsys.model.SavedJob;
 import com.Jobapplicantsystem.Jobappsys.repository.ApplicantRepository;
 import com.Jobapplicantsystem.Jobappsys.repository.JobPostRepository;
 import com.Jobapplicantsystem.Jobappsys.repository.SavedJobRepository;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +21,7 @@ public class ApplicantService {
 
     // Save job bookmark
     public SavedJob saveJob(String email, Long jobId) {
-
-        Applicant applicant = applicantRepository.findAll().stream()
-                .filter(a -> email.equalsIgnoreCase(a.getEmail()))
-                .findFirst()
+        Applicant applicant = applicantRepository.findByUserEmail(email)
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         JobPost job = jobPostRepository.findById(jobId)
@@ -41,10 +37,7 @@ public class ApplicantService {
 
     // Get saved jobs
     public List<SavedJob> getSavedJobs(String email) {
-
-        Applicant applicant = applicantRepository.findAll().stream()
-                .filter(a -> email.equalsIgnoreCase(a.getEmail()))
-                .findFirst()
+        Applicant applicant = applicantRepository.findByUserEmail(email)
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         return savedJobRepository.findAll().stream()
@@ -52,7 +45,7 @@ public class ApplicantService {
                 .toList();
     }
 
-    // Get all job posts (for searching)
+    // Get all jobs (Helper)
     public List<JobPost> getAllJobs() {
         return jobPostRepository.findAll();
     }

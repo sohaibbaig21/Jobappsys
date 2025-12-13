@@ -1,55 +1,50 @@
 package com.Jobapplicantsystem.Jobappsys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "applicants")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Applicant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Link back to User (Login account)
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore   // Prevents infinite loop on serialization
     private User user;
 
     private String phone;
     private String city;
+    @Column(name = "postal_code")
     private String postalCode;
-    private Boolean relocate;
 
-    private String jobTitle;
-    private String jobType;
-    private String workAuth;
+    // Replaced educationJson with OneToMany relationship
+    @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevents infinite recursion during JSON serialization
+    private List<ApplicantEducation> education;
 
-    @Column(columnDefinition = "TEXT")
-    private String educationJson;
+    // Replaced experienceJson with OneToMany relationship
+    @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevents infinite recursion during JSON serialization
+    private List<ApplicantExperience> experience;
 
-    @Column(columnDefinition = "TEXT")
-    private String experienceJson;
+    // Replaced skillsJson with OneToMany relationship
+    @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevents infinite recursion during JSON serialization
+    private List<ApplicantSkill> skills;
 
-    @Column(columnDefinition = "TEXT")
-    private String skillsJson;
-
-    @Column(columnDefinition = "TEXT")
-    private String summary;
-
-    // --- NEW FIELDS FOR DATA TRANSFER ---
-    // @Transient means: "Don't save this in the applicants table,
-    // just use it to carry data from the frontend."
-
-    @Transient
-    private String firstName;
-
-    @Transient
-    private String lastName;
-
-    @Transient
-    private String email;
+    // Default resume filename for the profile
+    @Column(name = "resume_filename")
+    private String resumeFilename;
 }

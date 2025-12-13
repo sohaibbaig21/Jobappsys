@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.UUID;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 
 /**
  * Supabase Storage Client Utility
@@ -21,6 +23,7 @@ import java.util.UUID;
  * 2. Delete file
  * 3. Get public URL
  * 4. Generate signed URL
+ * 5. Download file
  */
 public class SupabaseStorageClient {
 
@@ -83,6 +86,45 @@ public class SupabaseStorageClient {
 
         // 6️⃣ Return public file URL
         return getFileUrl(filePath);
+    }
+
+    // ============================================================
+    // DOWNLOAD FILE
+    // ============================================================
+    public Resource downloadFile(String filename) throws IOException {
+        // Assuming 'filename' here might include the path (e.g., resumes/{userId}/uniqueName.pdf)
+        // Or it might just be the uniqueName and we need to reconstruct the path.
+        // For now, let's assume `filename` is the full `filePath` as stored in Supabase.
+        String downloadUrl = supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + filename;
+
+        Request request = new Request.Builder()
+                .url(downloadUrl)
+                .get()
+                .addHeader("apikey", apiKey)
+                .addHeader("Authorization", "Bearer " + apiKey)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Download failed: " + response.message());
+            }
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
+                throw new IOException("Empty response body for download");
+            }
+            byte[] fileContent = responseBody.bytes();
+            return new ByteArrayResource(fileContent) {
+                @Override
+                public String getFilename() {
+                    // Extract filename from the path if it contains directories
+                    int lastSlashIndex = filename.lastIndexOf('/');
+                    if (lastSlashIndex != -1) {
+                        return filename.substring(lastSlashIndex + 1);
+                    }
+                    return filename;
+                }
+            };
+        }
     }
 
     // ============================================================

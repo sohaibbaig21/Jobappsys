@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>My Profile | JobAppSys</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+</head>
+<body>
+<main class="stack" style="max-width: 800px; margin: 0 auto;">
+    <div class="row" style="align-items: center;">
+        <a href="/jobs.html" class="btn secondary">← Back to Jobs</a>
+        <h1>My Profile</h1>
+    </div>
+
+    <div id="status" class="muted">Loading profile...</div>
+
+    <div class="card stack">
+        <h2>Personal Information</h2>
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" name="firstName" required>
+
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" name="lastName" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" disabled>
+
+        <label for="phone">Phone:</label>
+        <input type="tel" id="phone" name="phone">
+
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city">
+
+        <label for="postalCode">Postal Code:</label>
+        <input type="text" id="postalCode" name="postalCode">
+
+        <button id="saveProfileBtn" class="btn primary">Save Profile</button>
+    </div>
+
+    <!-- Education Section (will be added later) -->
+    <div class="card stack" style="margin-top: 20px;">
+        <h2>Education</h2>
+        <div id="education-list">No education entries.</div>
+        <button id="addEducationBtn" class="btn secondary">Add Education</button>
+    </div>
+
+    <!-- Skills Section (will be added later) -->
+    <div class="card stack" style="margin-top: 20px;">
+        <h2>Skills</h2>
+        <div id="skills-list">No skills entries.</div>
+        <button id="addSkillBtn" class="btn secondary">Add Skill</button>
+    </div>
+
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        $api.renderHeader('my-profile');
+        const statusEl = document.getElementById('status');
+        const firstNameEl = document.getElementById('firstName');
+        const lastNameEl = document.getElementById('lastName');
+        const emailEl = document.getElementById('email');
+        const phoneEl = document.getElementById('phone');
+        const cityEl = document.getElementById('city');
+        const postalCodeEl = document.getElementById('postalCode');
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+        const user = $api.getAuth();
+        if (!user) {
+            window.location.href = '/login.html?next=/my-profile.html';
+            return;
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await $api.apiFetch('/api/applicant/profile');
+                if (!response.ok) throw new Error('Failed to fetch profile');
+                const profile = await response.json();
+
+                firstNameEl.value = profile.firstName || '';
+                lastNameEl.value = profile.lastName || '';
+                emailEl.value = user.email || ''; // Use authenticated user's email
+                phoneEl.value = profile.phone || '';
+                cityEl.value = profile.city || '';
+                postalCodeEl.value = profile.postalCode || '';
+
+                statusEl.textContent = '';
+            } catch (e) {
+                statusEl.className = 'error';
+                statusEl.textContent = 'Error loading profile: ' + e.message;
+            }
+        }
+
+        saveProfileBtn.addEventListener('click', async () => {
+            statusEl.textContent = 'Saving profile...';
+            saveProfileBtn.disabled = true;
+            try {
+                const profileData = {
+                    firstName: firstNameEl.value,
+                    lastName: lastNameEl.value,
+                    phone: phoneEl.value,
+                    city: cityEl.value,
+                    postalCode: postalCodeEl.value
+                };
+
+                const response = await $api.apiFetch('/api/applicant/profile', {
+                    method: 'PUT',
+                    body: profileData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to save profile');
+                }
+
+                statusEl.className = 'success';
+                statusEl.textContent = 'Profile saved successfully!';
+
+            } catch (e) {
+                statusEl.className = 'error';
+                statusEl.textContent = 'Error saving profile: ' + e.message;
+            } finally {
+                saveProfileBtn.disabled = false;
+                saveProfileBtn.textContent = 'Save Profile';
+            }
+        });
+
+        await fetchProfile();
+
+        // TODO: Add logic for Education and Skills sections later
+        document.getElementById('addEducationBtn').addEventListener('click', () => alert('Add Education feature coming soon!'));
+        document.getElementById('addSkillBtn').addEventListener('click', () => alert('Add Skill feature coming soon!'));
+    });
+</script>
+</body>
+</html>

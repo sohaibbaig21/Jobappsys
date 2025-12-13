@@ -3,69 +3,153 @@
 <head>
     <meta charset="utf-8">
     <title>Job Board | Jobappsys</title>
+
+    <!-- Existing CSS + API -->
     <link rel="stylesheet" href="/styles.css">
     <script defer src="/js/api.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-          // 1. Render Header
-          $api.renderHeader('jobs');
 
-          const listEl = document.getElementById('jobs-list');
-          const status = document.getElementById('status');
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #ffffff);
+        }
 
-          status.textContent = 'Loading jobs...';
+        main {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
 
-          try {
-            // 2. Fetch All Jobs
-            const jobs = await $api.apiFetch('/api/jobs', { auth: false });
-            status.textContent = '';
+        h1 {
+            text-align: center;
+            color: #1a237e;
+            margin-bottom: 25px;
+            font-size: 34px;
+            font-weight: 700;
+        }
 
-            if (!Array.isArray(jobs) || jobs.length === 0) {
-              status.textContent = 'No jobs found. Be the first to post one!';
-              return;
-            }
+        /* Filter Bar */
+        .filter-box {
+            background: #f8f8ff;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid #d4d9ff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
 
-            // 3. Render Each Job Card
-            jobs.forEach(j => {
-              const item = document.createElement('div');
-              item.className = 'card stack';
+        .filter-box input,
+        .filter-box select {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #c4c7ff;
+            background: white;
+            font-size: 14px;
+            min-width: 140px;
+        }
 
-              const title = j.title || 'Untitled';
-              const location = j.location || 'Remote';
-              const salary = j.salary ? `$${j.salary}` : 'Salary not disclosed';
+        .filter-box button {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            background: #3f51b5;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
 
-              item.innerHTML = `
-                <div class="row" style="justify-content: space-between;">
-                  <h3>${title}</h3>
-                  <a class="btn" href="/job.html?id=${j.id}">View Details</a>
-                </div>
-                <div class="row muted">
-                   <span>📍 ${location}</span>
-                   <span>💼 ${j.employmentType || 'Full-time'}</span>
-                </div>
-                <div class="muted">💰 ${salary}</div>
-              `;
-              listEl.appendChild(item);
-            });
+        .filter-box button:hover {
+            background: #2c3e9f;
+        }
 
-          } catch (e) {
-            status.className = 'error';
-            status.textContent = 'Failed to load jobs: ' + (e.message || 'Unknown error');
-          }
-        });
-    </script>
+        /* Status text */
+        #status {
+            text-align: center;
+            padding: 10px;
+            font-size: 15px;
+        }
+
+        .error {
+            color: #d50000;
+            background: #ffebee;
+            border-left: 4px solid #d50000;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Job Cards */
+        .job-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #d7dcff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+            margin-bottom: 18px;
+            transition: 0.25s ease;
+        }
+
+        .job-card:hover {
+            transform: translateY(-4px);
+            border-color: #3f51b5;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-header h3 {
+            margin: 0;
+            color: #1a237e;
+        }
+
+        .btn {
+            background: #3f51b5;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #303f9f;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .muted {
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
 </head>
-<body>
-<main class="stack" style="max-width: 900px; margin: 0 auto;">
-    <h1>Job Board</h1>
 
-    <div class="card row" style="background:#f1f1f1; padding:15px; flex-wrap:wrap;">
-        <input id="filter-loc" placeholder="Location (e.g. USA)" style="flex:1;">
+<body>
+<main class="stack">
+
+    <h1>Job Listings</h1>
+
+    <!-- FILTER BAR -->
+    <div class="filter-box">
+        <input id="filter-loc" placeholder="Location...">
         <select id="filter-type">
             <option value="All">All Types</option>
             <option value="Full-time">Full-time</option>
-            <option value="Remote">Remote</option>
+            <option value="Part-time">Part-time</option>
             <option value="Contract">Contract</option>
+            <option value="Internship">Internship</option>
         </select>
         <select id="filter-sort">
             <option value="relevant">Most Relevant</option>
@@ -75,62 +159,78 @@
         <button onclick="loadJobs()">Filter</button>
     </div>
 
-    <div id="status" class="muted"></div>
-    <div id="jobs-list" class="list"></div>
+    <div id="status" class="muted">Loading...</div>
+
+    <!-- Job List -->
+    <div id="jobs-list"></div>
+
 </main>
 
 <script>
-    // Updated loadJobs function handles parameters
     async function loadJobs() {
         const listEl = document.getElementById('jobs-list');
         const status = document.getElementById('status');
 
-        // Get values
-        const loc = document.getElementById('filter-loc').value;
-        const type = document.getElementById('filter-type').value;
-        const sort = document.getElementById('filter-sort').value;
+        const loc = document.getElementById('filter-loc')?.value || '';
+        const type = document.getElementById('filter-type')?.value || 'All';
+        const sort = document.getElementById('filter-sort')?.value || 'relevant';
 
-        // Build URL
-        const params = new URLSearchParams({ location: loc, type: type, sort: sort });
+        const params = new URLSearchParams({
+            location: loc,
+            type: type === 'All' ? '' : type,
+            sort: sort
+        });
 
-        status.textContent = 'Loading...';
-        listEl.innerHTML = ''; // Clear current list
+        status.textContent = 'Fetching jobs...';
+        listEl.innerHTML = '';
 
         try {
-            const jobs = await $api.apiFetch(`/api/jobs?${params.toString()}`, { auth: false });
+            const response = await $api.apiFetch(`/api/jobs?${params.toString()}`, { auth: false });
+            const jobs = await response.json();
             status.textContent = '';
 
-            if (!jobs || jobs.length === 0) {
-                status.textContent = 'No jobs found matching your filters.';
+            if (!Array.isArray(jobs) || jobs.length === 0) {
+                status.textContent = 'No jobs found.';
                 return;
             }
 
             jobs.forEach(j => {
                 const item = document.createElement('div');
-                item.className = 'card stack';
+                item.className = 'job-card';
+
                 item.innerHTML = `
-                    <div class="row" style="justify-content: space-between;">
-                      <h3>${j.title || 'Untitled'}</h3>
-                      <a class="btn" href="/job.html?id=${j.id}">View Details</a>
+                    <div class="job-header">
+                        <h3>${j.title || 'Untitled'}</h3>
+                        <a class="btn" href="/job.html?id=${j.id}">Details</a>
                     </div>
-                    <div class="row muted">
-                       <span>📍 ${j.location || 'Remote'}</span>
-                       <span>💼 ${j.employmentType || 'Full-time'}</span>
+
+                    <div class="row muted" style="margin-top: 6px;">
+                        <span>📍 ${j.location || 'Remote'}</span>
+                        <span>💼 ${j.employmentType || 'N/A'}</span>
                     </div>
-                    <div class="muted">💰 ${j.salary ? '$'+j.salary : 'N/A'}</div>
+
+                    <div class="muted" style="margin-top: 8px;">
+                        💰 ${j.salary ? '$' + j.salary : 'N/A'}
+                    </div>
                 `;
+
                 listEl.appendChild(item);
             });
 
         } catch (e) {
-            status.textContent = 'Error: ' + e.message;
+            console.error(e);
+            status.className = 'error';
+            status.textContent = 'Error loading jobs. Check console.';
         }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        $api.renderHeader('jobs');
-        loadJobs(); // Load default on start
+        if (window.$api) {
+            $api.renderHeader('jobs');
+            loadJobs();
+        }
     });
 </script>
+
 </body>
 </html>

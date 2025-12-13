@@ -2,18 +2,199 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Post a Job | Jobappsys</title>
+    <title>Post a Job | JobAppSys</title>
     <link rel="stylesheet" href="/styles.css">
     <script defer src="/js/api.js"></script>
+
+    <style>
+        /* Form Card Styling */
+        .card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #dfe3f0;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        }
+
+        form.stack > .stack {
+            margin-bottom: 18px;
+        }
+
+        input, select, textarea {
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            background: #3f51b5;
+            color: #fff;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #303f9f;
+        }
+
+        .btn.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #cacaca;
+        }
+
+        .btn.small {
+            padding: 7px 12px;
+            font-size: 14px;
+        }
+
+        .btn.error {
+            background: #d9534f;
+            color: #fff;
+        }
+
+        .btn.error:hover {
+            background: #c9302c;
+        }
+
+        /* Question Items */
+        .question-item {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .question-meta {
+            font-size: 0.85em;
+            color: #777;
+        }
+
+        .add-box {
+            border: 2px dashed #cfd3db;
+            padding: 18px;
+            border-radius: 10px;
+            background: #fcfcfc;
+        }
+
+        /* Section title */
+        h3 {
+            margin-top: 18px;
+            margin-bottom: 6px;
+            font-size: 20px;
+        }
+    </style>
+
     <script>
+        // Store questions
+        let questions = [];
+
+        function addQuestion() {
+            const input = document.getElementById('new-q-text');
+            const type = document.getElementById('new-q-type');
+            const required = document.getElementById('new-q-required');
+            const optionsInput = document.getElementById('new-q-options');
+
+            const text = input.value.trim();
+            const questionType = type.value;
+            const isRequired = required.checked;
+            let options = [];
+
+            if (!text) return alert("Please enter a question text.");
+
+            if (questionType === 'SINGLE_CHOICE' || questionType === 'MULTI_CHOICE') {
+                const optionsText = optionsInput.value.trim();
+                if (!optionsText) return alert("Please enter options for the choice question.");
+                options = optionsText.split(',').map(o => o.trim()).filter(o => o.length > 0);
+                if (options.length === 0) return alert("Please enter valid options.");
+            }
+
+            questions.push({
+                questionText: text,
+                questionType: questionType,
+                isRequired: isRequired,
+                options: options
+            });
+
+            input.value = '';
+            optionsInput.value = '';
+            required.checked = false;
+            type.value = 'TEXT';
+            document.getElementById('new-q-options-container').style.display = 'none';
+
+            renderQuestions();
+        }
+
+        function removeQuestion(index) {
+            questions.splice(index, 1);
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const listEl = document.getElementById('questions-list');
+            listEl.innerHTML = '';
+
+            if (questions.length === 0) {
+                listEl.innerHTML = '<div class="muted">No questions added yet.</div>';
+                return;
+            }
+
+            questions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = 'question-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${index + 1}. ${q.questionText}</strong><br>
+                        <span class="question-meta">
+                            ${q.isRequired ? '★ Compulsory ' : 'Optional '}
+                            (${q.questionType.replace('_', ' ')})
+                            ${(q.options && q.options.length > 0) ? ': ' + q.options.join(', ') : ''}
+                        </span>
+                    </div>
+
+                    <button type="button" class="btn small error" onclick="removeQuestion(${index})">Remove</button>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-          // 1. Render Header
           $api.renderHeader('post-job');
 
           const form = document.getElementById('post-job-form');
           const status = document.getElementById('status');
 
-          // 2. Security Check (Must be Employer)
+          // Toggle options input based on question type selection
+          document.getElementById('new-q-type').addEventListener('change', (event) => {
+              const optionsContainer = document.getElementById('new-q-options-container');
+              if (event.target.value === 'SINGLE_CHOICE' || event.target.value === 'MULTI_CHOICE') {
+                  optionsContainer.style.display = 'block';
+              } else {
+                  optionsContainer.style.display = 'none';
+              }
+          });
+
           const auth = $api.getAuth();
           if (!auth || auth.role !== 'EMPLOYER') {
               alert('Access Denied: You must be an Employer to post jobs.');
@@ -21,33 +202,36 @@
               return;
           }
 
-          // 3. Handle Form Submit
           form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             status.className = 'muted';
             status.textContent = 'Publishing job...';
 
-            // Collect Data
             const payload = {
                 title: form.title.value.trim(),
                 location: form.location.value.trim(),
                 employmentType: form.employmentType.value,
                 salary: parseFloat(form.salary.value),
-                description: form.description.value.trim()
+                description: form.description.value.trim(),
+                questions: questions.map(q => ({
+                    questionText: q.questionText,
+                    questionType: q.questionType,
+                    isRequired: q.isRequired,
+                    options: q.options
+                }))
             };
 
             try {
-              // Send to Backend
               await $api.apiFetch('/api/employer/jobs', {
                 method: 'POST',
                 body: payload
               });
 
-              // Success
               status.className = 'success';
               status.textContent = 'Job posted successfully! Redirecting...';
-              setTimeout(() => location.href = '/jobs.html', 1000);
+
+              setTimeout(() => location.href = '/employer-dashboard.html', 1000);
 
             } catch (e) {
               status.className = 'error';
@@ -57,10 +241,11 @@
         });
     </script>
 </head>
+
 <body>
-<main class="stack" style="max-width: 600px; margin: 32px auto;">
-    <h1>Post a New Job</h1>
-    <div id="status" class="muted"></div>
+<main style="max-width: 700px; margin: 32px auto;">
+    <h1 style="text-align:center; margin-bottom: 20px;">Post a New Job</h1>
+    <div id="status" class="muted" style="margin-bottom: 12px;"></div>
 
     <form id="post-job-form" class="stack card">
 
@@ -74,6 +259,7 @@
                 <label>Location</label>
                 <input name="location" type="text" placeholder="e.g. Remote / New York" required>
             </div>
+
             <div class="stack" style="flex: 1;">
                 <label>Employment Type</label>
                 <select name="employmentType">
@@ -92,12 +278,44 @@
 
         <div class="stack">
             <label>Job Description</label>
-            <textarea name="description" rows="6" placeholder="Describe the role, requirements, and benefits..." required></textarea>
+            <textarea name="description" rows="5" placeholder="Describe the role, requirements, and benefits..." required></textarea>
         </div>
 
-        <div class="row" style="justify-content: flex-end; margin-top: 10px;">
-            <a href="/jobs.html" class="btn secondary" style="margin-right: 10px;">Cancel</a>
-            <button type="submit">Publish Job</button>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <h3>Screening Questions</h3>
+        <p class="muted" style="font-size: 0.9em;">Add optional questions that applicants must answer.</p>
+
+        <div id="questions-list" class="stack" style="margin-bottom: 12px;"></div>
+
+        <div class="add-box stack">
+            <label>New Question</label>
+            <input id="new-q-text" type="text" placeholder="e.g. Do you have 3+ years of React experience?">
+
+            <label>Question Type</label>
+            <select id="new-q-type">
+                <option value="TEXT">Text Answer</option>
+                <option value="SINGLE_CHOICE">Single Choice</option>
+                <option value="MULTI_CHOICE">Multiple Choice</option>
+            </select>
+
+            <div id="new-q-options-container" class="stack" style="display: none;">
+                <label>Options (comma-separated)</label>
+                <textarea id="new-q-options" rows="3" placeholder="Option 1, Option 2, Option 3"></textarea>
+            </div>
+
+            <div class="row" style="justify-content: space-between; align-items: center;">
+                <label style="font-weight: normal;">
+                    <input type="checkbox" id="new-q-required"> Mark as <strong>Compulsory</strong>
+                </label>
+
+                <button type="button" class="btn small" onclick="addQuestion()">+ Add Question</button>
+            </div>
+        </div>
+
+        <div class="row" style="justify-content: flex-end; margin-top: 20px;">
+            <a href="/employer-dashboard.html" class="btn secondary">Cancel</a>
+            <button type="submit" class="btn">Publish Job</button>
         </div>
     </form>
 </main>

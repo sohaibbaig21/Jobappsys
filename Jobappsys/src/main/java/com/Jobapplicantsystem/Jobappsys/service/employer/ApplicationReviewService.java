@@ -7,5 +7,5 @@ public interface ApplicationReviewService {
 
     void acceptApplication(Long applicationId);
     void rejectApplication(Long applicationId);
-    List<ApplicationResponse> getApplicationsByJobPost(Long jobPostId);
+    List<ApplicationResponse> getApplicationsByJobPost(Long jobPostId, String employerEmail);
 }

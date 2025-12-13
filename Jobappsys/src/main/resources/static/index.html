@@ -1,58 +1,162 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jobs | Jobappsys</title>
-  <link rel="stylesheet" href="/styles.css">
-  <script defer src="/js/api.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      $api.renderHeader('jobs');
-      const listEl = document.getElementById('jobs');
-      const status = document.getElementById('status');
-      status.textContent = 'Loading jobs...';
-      try {
-        const jobs = await $api.apiFetch('/api/jobs', { auth: false });
-        status.textContent = '';
-        if (!Array.isArray(jobs) || jobs.length === 0) {
-          status.textContent = 'No jobs found.';
-          return;
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jobs | Jobappsys</title>
+
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/js/api.js"></script>
+
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: "Segoe UI", Roboto, Arial, sans-serif;
+          background: linear-gradient(135deg, #eef2ff, #ffffff);
         }
-        jobs.forEach(j => {
-          const item = document.createElement('div');
-          item.className = 'card item';
-          const title = j.title || 'Untitled';
-          const location = j.location || 'Unspecified location';
-          const employment = j.employmentType || '';
-          const salary = j.salary != null ? `Salary: ${j.salary}` : '';
-          item.innerHTML = `
-            <div class="row" style="justify-content: space-between;">
-              <div>
-                <div><strong>${title}</strong></div>
-                <div class="muted">${location} ${employment ? ' · ' + employment : ''}</div>
-              </div>
-              <a class="btn" href="/job.html?id=${encodeURIComponent(j.id)}">Details</a>
-            </div>
-            <div class="muted">${salary}</div>
-          `;
-          listEl.appendChild(item);
+
+        main {
+          max-width: 900px;
+          margin: 40px auto;
+          padding: 20px;
+        }
+
+        h1 {
+          text-align: center;
+          color: #1a237e;
+          font-size: 34px;
+          margin-bottom: 25px;
+          font-weight: 700;
+        }
+
+        #status {
+          text-align: center;
+          padding: 10px;
+          font-size: 15px;
+        }
+
+        .grid {
+          display: grid;
+          gap: 20px;
+        }
+
+        /* Card Styling */
+        .item {
+          background: white;
+          padding: 22px;
+          border-radius: 12px;
+          border: 1px solid #d7dcff;
+          box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+          transition: 0.25s ease;
+        }
+
+        .item:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+          border-color: #3f51b5;
+        }
+
+        .row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .muted {
+          color: #666;
+          font-size: 14px;
+        }
+
+        /* Buttons */
+        .btn {
+          background: #3f51b5;
+          color: white;
+          padding: 9px 16px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          display: inline-block;
+          transition: 0.2s ease;
+        }
+
+        .btn:hover {
+          background: #303f9f;
+        }
+
+        /* Error Box */
+        .error {
+          color: #d32f2f;
+          background: #ffebee;
+          border-left: 4px solid #d32f2f;
+          padding: 10px;
+          border-radius: 4px;
+          margin-top: 10px;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          $api.renderHeader('jobs');
+
+          const user = $api.getAuth();
+          console.log("User on index.html:", user);
+
+          const listEl = document.getElementById('jobs');
+          const status = document.getElementById('status');
+
+          status.textContent = 'Loading jobs...';
+
+          try {
+            const response = await $api.apiFetch('/api/jobs', { auth: false });
+            const jobs = await response.json(); // Parse the response as JSON
+            status.textContent = '';
+
+            if (!Array.isArray(jobs) || jobs.length === 0) {
+              status.textContent = 'No jobs found.';
+              return;
+            }
+
+            jobs.forEach(j => {
+              const item = document.createElement('div');
+              item.className = 'card item';
+
+              const title = j.title || 'Untitled';
+              const location = j.location || 'Unspecified location';
+              const employment = j.employmentType || '';
+              const salary = j.salary != null ? `Salary: ${j.salary}` : '';
+
+              item.innerHTML = `
+                <div class="row">
+                  <div>
+                    <div><strong>${title}</strong></div>
+                    <div class="muted">${location}${employment ? ' · ' + employment : ''}</div>
+                  </div>
+
+                  <a class="btn" href="/job.html?id=${encodeURIComponent(j.id)}">Details</a>
+                </div>
+
+                <div class="muted">${salary}</div>
+              `;
+
+              listEl.appendChild(item);
+            });
+
+          } catch (e) {
+            status.className = 'error';
+            status.textContent = 'Failed to load jobs: ' + (e.message || 'Unknown error');
+          }
         });
-      } catch (e) {
-        status.className = 'error';
-        status.textContent = 'Failed to load jobs: ' + (e.message || 'Unknown error');
-      }
-    });
-  </script>
-  <style>
-    .grid { display: grid; gap: 12px; }
-  </style>
-  </head>
+    </script>
+</head>
+
 <body>
-  <main class="stack">
+<main>
     <h1>Job Listings</h1>
     <div id="status" class="muted"></div>
     <div id="jobs" class="list grid"></div>
-  </main>
+</main>
 </body>
 </html>

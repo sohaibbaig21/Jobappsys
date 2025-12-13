@@ -23,7 +23,8 @@ public class ApplicationManagementController {
 
     @GetMapping("/{jobPostId}")
     public ResponseEntity<List<ApplicationResponse>> getApplicationsByJobPost(@PathVariable Long jobPostId) {
-        return ResponseEntity.ok(reviewService.getApplicationsByJobPost(jobPostId));
+        String employerEmail = getEmail();
+        return ResponseEntity.ok(reviewService.getApplicationsByJobPost(jobPostId, employerEmail));
     }
 
     @PutMapping("/{applicationId}/accept")

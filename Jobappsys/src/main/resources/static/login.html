@@ -18,13 +18,8 @@
         const email = form.email.value.trim();
         const password = form.password.value;
         try {
-          const resp = await $api.apiFetch('/api/auth/login', {
-            method: 'POST',
-            auth: false,
-            body: { email, password }
-          });
-          // Save auth and redirect
-          $api.setAuth(resp);
+          const ok = await $api.login(email, password);
+          if (!ok) throw new Error('Invalid credentials');
           status.className = 'success';
           status.textContent = 'Login successful. Redirecting...';
           const next = new URLSearchParams(location.search).get('next') || '/index.html';

@@ -5,12 +5,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class RegisterRequest {
-    private String firstName;  // <--- You were missing this
-    private String lastName;   // <--- You were missing this
+    private String firstName;
+    private String lastName;
     private String email;
     private String password;
-    private String role;       // e.g., "EMPLOYER" or "APPLICANT"
+    private String role; // "APPLICANT" or "EMPLOYER"
 }
